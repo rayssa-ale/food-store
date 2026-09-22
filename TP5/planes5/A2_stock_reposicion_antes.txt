@@ -1,0 +1,14 @@
+Limit  (cost=1954.27..1954.52 rows=100 width=33) (actual time=10.320..10.328 rows=100.00 loops=1)
+  Buffers: shared hit=863
+  ->  Sort  (cost=1954.27..1984.77 rows=12198 width=33) (actual time=10.317..10.320 rows=100.00 loops=1)
+        Sort Key: stock, id
+        Sort Method: top-N heapsort  Memory: 36kB
+        Buffers: shared hit=863
+        ->  Seq Scan on producto p  (cost=0.00..1488.08 rows=12198 width=33) (actual time=0.015..7.584 rows=12443.00 loops=1)
+              Filter: (activo AND (stock < 50))
+              Rows Removed by Filter: 37563
+              Buffers: shared hit=863
+Planning:
+  Buffers: shared hit=33
+Planning Time: 0.259 ms
+Execution Time: 10.351 ms

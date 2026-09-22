@@ -1,0 +1,38 @@
+Nested Loop  (cost=29739.63..30176.60 rows=50 width=72) (actual time=565.810..566.630 rows=50.00 loops=1)
+  Buffers: shared hit=6184
+  ->  Nested Loop  (cost=29739.34..30160.92 rows=50 width=56) (actual time=565.794..566.219 rows=50.00 loops=1)
+        Buffers: shared hit=6034
+        ->  Limit  (cost=29738.92..29739.05 rows=50 width=48) (actual time=565.756..565.766 rows=50.00 loops=1)
+              Buffers: shared hit=5834
+              ->  Sort  (cost=29738.92..30165.39 rows=170588 width=48) (actual time=565.752..565.759 rows=50.00 loops=1)
+                    Sort Key: (sum(((d.cantidad)::numeric * d.precio_unitario))) DESC
+                    Sort Method: top-N heapsort  Memory: 30kB
+                    Buffers: shared hit=5834
+                    ->  HashAggregate  (cost=21939.76..24072.11 rows=170588 width=48) (actual time=457.442..541.083 rows=166857.00 loops=1)
+                          Group Key: d.pedido_id
+                          Batches: 1  Memory Usage: 69649kB
+                          Buffers: shared hit=5834
+                          ->  Hash Join  (cost=6250.74..16730.45 rows=416745 width=25) (actual time=80.273..263.037 rows=417378.00 loops=1)
+                                Hash Cond: (d.pedido_id = pe_1.id)
+                                Buffers: shared hit=5834
+                                ->  Seq Scan on detalle_pedido d  (cost=0.00..9167.14 rows=500014 width=25) (actual time=0.029..35.815 rows=500014.00 loops=1)
+                                      Buffers: shared hit=4167
+                                ->  Hash  (cost=4167.04..4167.04 rows=166696 width=8) (actual time=79.764..79.765 rows=166857.00 loops=1)
+                                      Buckets: 262144  Batches: 1  Memory Usage: 8566kB
+                                      Buffers: shared hit=1667
+                                      ->  Seq Scan on pedido pe_1  (cost=0.00..4167.04 rows=166696 width=8) (actual time=0.196..35.211 rows=166857.00 loops=1)
+                                            Filter: (estado <> 'CANCELADO'::estado_pedido)
+                                            Rows Removed by Filter: 33146
+                                            Buffers: shared hit=1667
+        ->  Index Scan using pedido_pkey on pedido pe  (cost=0.42..8.44 rows=1 width=16) (actual time=0.008..0.008 rows=1.00 loops=50)
+              Index Cond: (id = d.pedido_id)
+              Index Searches: 50
+              Buffers: shared hit=200
+  ->  Index Scan using cliente_pkey on cliente c  (cost=0.29..0.31 rows=1 width=32) (actual time=0.008..0.008 rows=1.00 loops=50)
+        Index Cond: (id = pe.cliente_id)
+        Index Searches: 50
+        Buffers: shared hit=150
+Planning:
+  Buffers: shared hit=154
+Planning Time: 6.116 ms
+Execution Time: 575.089 ms

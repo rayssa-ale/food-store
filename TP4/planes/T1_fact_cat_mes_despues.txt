@@ -1,0 +1,10 @@
+Sort  (cost=2.52..2.62 rows=39 width=54) (actual time=0.253..0.253 rows=39.00 loops=1)
+  Sort Key: (to_char(mes, 'YYYY-MM'::text)), categoria
+  Sort Method: quicksort  Memory: 26kB
+  Buffers: shared hit=4
+  ->  Seq Scan on mv_ventas_categoria_mes  (cost=0.00..1.49 rows=39 width=54) (actual time=0.139..0.155 rows=39.00 loops=1)
+        Buffers: shared hit=1
+Planning:
+  Buffers: shared hit=103
+Planning Time: 2.004 ms
+Execution Time: 0.293 ms

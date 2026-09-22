@@ -1,24 +1,4 @@
-# FOOD STORE — Proyecto integrador · Base de Datos II (UTN)
-
-Repositorio del equipo G. Cada TP tiene su **carpeta de entrega** (`TP1/` … `TP5/`)
-con copias y PDF, y su historial de commits (flujo Kiro → OpenCode → el motor
-decide). El código fuente vive en la raíz y en `sql/`.
-
-## Índice de trabajos prácticos
-
-| TP | Carpeta | Qué entrega | Commits clave |
-|---|---|---|---|
-| **TP1** — Modelo, normalización y DDL | `TP1/` (+ zip `Alejo_Rayssa_equipoG_TP1.zip`) | `schema.sql`, diagrama ER, `desarrollo_TP1.pdf`, DUIA | `450bb0c`, `1050b89` |
-| **TP2** — Integridad y concurrencia | `TP2/` | restricciones/triggers (R8–R10), informe de concurrencia, lectura crítica, `TP2_Food_Store.pdf` | `38e9d75`, `df6b0fe`, `ff8372c` |
-| **TP3** — Optimización: filtros, índices, planes | `TP3/` | carga masiva, queries, optimizaciones, equivalencias EXCEPT, competencia ×42, DUIA, `TP3_Food_Store.pdf` | `0a2b1d8`, `352e67a`, `f09a3e1`, `a94cee0` |
-| **TP4** — Analíticas: joins, agregación, ventana | `TP4/` | queries_tp4, MVs T1/T5, lectura crítica, equivalencias EXCEPT, competencia ×3.5, DUIA, `TP4_Food_Store.pdf` | `57c1529`, `b073fba`, `c9f64cd` |
-| **TP5** — Índices, vistas y vistas materializadas | `TP5/` | índices (×1.6 / ×30 / ×2), vistas + seguridad, MV ×41.000, `informe_mediciones.md`, `duia.md`, `TP5_Food_Store.pdf` | `a3f3844`, `ed24029`, `b73529e`, `44a74b1`, `edd0abc` |
-
-Historial completo: `git log --oneline` (cada commit describe su pieza y su evidencia).
-
----
-
-## TP5 (Unidad 3 · Semana 5): Índices, vistas y vistas materializadas
+# FOOD STORE — TP5 (Unidad 3 · Semana 5): Índices, vistas y vistas materializadas
 
 Trabajo integrador de **Base de Datos II (UTN)**. Continúa las Semanas 1 a 4
 (`schema.sql`, `seed.sql` = `data.sql`, `queries.sql`) y agrega índices, vistas

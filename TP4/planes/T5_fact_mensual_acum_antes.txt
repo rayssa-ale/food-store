@@ -1,0 +1,57 @@
+WindowAgg  (cost=48715.86..48725.13 rows=337 width=144) (actual time=705.172..790.155 rows=46322.00 loops=1)
+  Window: w1 AS (PARTITION BY c.id ORDER BY m.mes)
+  Storage: Memory  Maximum Storage: 17kB
+  Buffers: shared hit=29971, temp read=1634 written=2372
+  CTE compras
+    ->  HashAggregate  (cost=38355.37..43304.61 rows=100635 width=48) (actual time=346.423..532.095 rows=82532.00 loops=1)
+          Group Key: pe.cliente_id, date_trunc('month'::text, pe.fecha)
+          Planned Partitions: 4  Batches: 5  Memory Usage: 8241kB  Disk Usage: 7880kB
+          Buffers: shared hit=5920, temp read=978 written=1715
+          ->  Hash Join  (cost=5311.09..16419.78 rows=251591 width=25) (actual time=38.730..219.327 rows=250070.00 loops=1)
+                Hash Cond: (d.pedido_id = pe.id)
+                Buffers: shared hit=5920
+                ->  Seq Scan on detalle_pedido d  (cost=0.00..9167.14 rows=500014 width=17) (actual time=0.022..26.875 rows=500014.00 loops=1)
+                      Buffers: shared hit=4167
+                ->  Hash  (cost=4053.15..4053.15 rows=100635 width=24) (actual time=38.510..38.511 rows=100049.00 loops=1)
+                      Buckets: 131072  Batches: 1  Memory Usage: 6496kB
+                      Buffers: shared hit=1753
+                      ->  Bitmap Heap Scan on pedido pe  (cost=1128.22..4053.15 rows=100635 width=24) (actual time=2.695..16.949 rows=100049.00 loops=1)
+                            Recheck Cond: (estado = 'ENTREGADO'::estado_pedido)
+                            Heap Blocks: exact=1667
+                            Buffers: shared hit=1753
+                            ->  Bitmap Index Scan on ix_pedido_estado  (cost=0.00..1103.06 rows=100635 width=0) (actual time=2.495..2.496 rows=100049.00 loops=1)
+                                  Index Cond: (estado = 'ENTREGADO'::estado_pedido)
+                                  Index Searches: 1
+                                  Buffers: shared hit=86
+  ->  Sort  (cost=5411.25..5412.09 rows=337 width=72) (actual time=705.136..712.081 rows=46322.00 loops=1)
+        Sort Key: c.id, m.mes
+        Sort Method: external merge  Disk: 2616kB
+        Buffers: shared hit=29971, temp read=1634 written=2372
+        ->  Hash Join  (cost=3003.65..5397.10 rows=337 width=72) (actual time=632.337..674.092 rows=46322.00 loops=1)
+              Hash Cond: (m.cliente_id = c.id)
+              Buffers: shared hit=29971, temp read=1307 written=2044
+              ->  CTE Scan on compras m  (cost=0.00..2012.70 rows=100635 width=48) (actual time=346.427..358.208 rows=82532.00 loops=1)
+                    Storage: Disk  Maximum Storage: 4096kB
+                    Buffers: shared hit=5920, temp read=329 written=1715
+              ->  Hash  (cost=3002.81..3002.81 rows=67 width=40) (actual time=285.831..285.833 rows=8017.00 loops=1)
+                    Buckets: 8192 (originally 1024)  Batches: 1 (originally 1)  Memory Usage: 659kB
+                    Buffers: shared hit=24051, temp read=978 written=329
+                    ->  Nested Loop  (cost=2516.16..3002.81 rows=67 width=40) (actual time=248.723..282.185 rows=8017.00 loops=1)
+                          Buffers: shared hit=24051, temp read=978 written=329
+                          ->  HashAggregate  (cost=2515.88..2518.38 rows=67 width=8) (actual time=248.680..254.866 rows=8017.00 loops=1)
+                                Group Key: compras.cliente_id
+                                Filter: (count(*) >= 5)
+                                Batches: 1  Memory Usage: 1577kB
+                                Rows Removed by Filter: 11865
+                                Buffers: temp read=978 written=329
+                                ->  CTE Scan on compras  (cost=0.00..2012.70 rows=100635 width=8) (actual time=0.001..216.272 rows=82532.00 loops=1)
+                                      Storage: Disk  Maximum Storage: 4096kB
+                                      Buffers: temp read=978 written=329
+                          ->  Index Scan using cliente_pkey on cliente c  (cost=0.29..7.23 rows=1 width=32) (actual time=0.003..0.003 rows=1.00 loops=8017)
+                                Index Cond: (id = compras.cliente_id)
+                                Index Searches: 8017
+                                Buffers: shared hit=24051
+Planning:
+  Buffers: shared hit=20
+Planning Time: 0.682 ms
+Execution Time: 825.829 ms

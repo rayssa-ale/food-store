@@ -1,0 +1,13 @@
+Limit  (cost=1.33..44.40 rows=100 width=32) (actual time=0.173..0.296 rows=100.00 loops=1)
+  Buffers: shared hit=109
+  ->  Incremental Sort  (cost=1.33..3827.37 rows=8882 width=32) (actual time=0.173..0.289 rows=100.00 loops=1)
+        Sort Key: precio, id
+        Presorted Key: precio
+        Full-sort Groups: 4  Sort Method: quicksort  Average Memory: 27kB  Peak Memory: 27kB
+        Buffers: shared hit=109
+        ->  Index Scan using ix_producto_cat_precio on producto p  (cost=0.41..3585.29 rows=8882 width=32) (actual time=0.062..0.181 rows=103.00 loops=1)
+              Index Cond: ((categoria_id = 2) AND (precio >= '600'::numeric) AND (precio <= '3000'::numeric))
+              Index Searches: 1
+              Buffers: shared hit=106
+Planning Time: 0.179 ms
+Execution Time: 0.338 ms

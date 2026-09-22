@@ -1,0 +1,10 @@
+Sort  (cost=5848.17..5890.24 rows=16827 width=32) (actual time=16.908..18.182 rows=16809.00 loops=1)
+  Sort Key: fecha, id
+  Sort Method: quicksort  Memory: 1556kB
+  Buffers: shared hit=1667
+  ->  Seq Scan on pedido pe  (cost=0.00..4667.05 rows=16827 width=32) (actual time=0.011..13.044 rows=16809.00 loops=1)
+        Filter: ((fecha >= '2026-01-01 00:00:00-03'::timestamp with time zone) AND (fecha < '2026-02-01 00:00:00-03'::timestamp with time zone))
+        Rows Removed by Filter: 183194
+        Buffers: shared hit=1667
+Planning Time: 0.095 ms
+Execution Time: 18.774 ms

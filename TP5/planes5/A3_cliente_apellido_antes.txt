@@ -1,0 +1,12 @@
+Limit  (cost=549.29..549.34 rows=20 width=50) (actual time=2.732..2.734 rows=20.00 loops=1)
+  Buffers: shared hit=267
+  ->  Sort  (cost=549.29..552.32 rows=1212 width=50) (actual time=2.731..2.732 rows=20.00 loops=1)
+        Sort Key: apellido, nombre
+        Sort Method: top-N heapsort  Memory: 28kB
+        Buffers: shared hit=267
+        ->  Seq Scan on cliente c  (cost=0.00..517.04 rows=1212 width=50) (actual time=0.023..2.039 rows=1111.00 loops=1)
+              Filter: ((apellido)::text ~~ 'Apellido15%'::text)
+              Rows Removed by Filter: 18892
+              Buffers: shared hit=267
+Planning Time: 0.115 ms
+Execution Time: 2.748 ms
