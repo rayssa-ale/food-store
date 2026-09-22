@@ -1,0 +1,49 @@
+Sort  (cost=156222.89..156851.87 rows=251591 width=258) (actual time=495.139..529.482 rows=39.00 loops=1)
+  Sort Key: (to_char((date_trunc('month'::text, pe.fecha)), 'YYYY-MM'::text)), c.nombre
+  Sort Method: quicksort  Memory: 27kB
+  Buffers: shared hit=8458, temp read=1318 written=1321
+  ->  GroupAggregate  (cost=33631.67..71739.27 rows=251591 width=258) (actual time=364.389..529.320 rows=39.00 loops=1)
+        Group Key: c.nombre, (date_trunc('month'::text, pe.fecha))
+        Buffers: shared hit=8458, temp read=1318 written=1321
+        ->  Gather Merge  (cost=33631.67..62933.59 rows=251591 width=203) (actual time=363.354..457.971 rows=250070.00 loops=1)
+              Workers Planned: 2
+              Workers Launched: 2
+              Buffers: shared hit=8458, temp read=1318 written=1321
+              ->  Sort  (cost=32631.64..32893.72 rows=104830 width=203) (actual time=316.382..328.052 rows=83356.67 loops=3)
+                    Sort Key: c.nombre, (date_trunc('month'::text, pe.fecha))
+                    Sort Method: external merge  Disk: 3472kB
+                    Buffers: shared hit=8458, temp read=1318 written=1321
+                    Worker 0:  Sort Method: external merge  Disk: 3776kB
+                    Worker 1:  Sort Method: external merge  Disk: 3296kB
+                    ->  Hash Join  (cost=5878.18..13498.53 rows=104830 width=203) (actual time=58.589..231.458 rows=83356.67 loops=3)
+                          Hash Cond: (p.categoria_id = c.id)
+                          Buffers: shared hit=8426
+                          ->  Hash Join  (cost=5865.71..12938.20 rows=104830 width=25) (actual time=57.843..183.968 rows=83356.67 loops=3)
+                                Hash Cond: (d.producto_id = p.id)
+                                Buffers: shared hit=8423
+                                ->  Parallel Hash Join  (cost=3877.57..10674.87 rows=104830 width=25) (actual time=28.522..110.680 rows=83356.67 loops=3)
+                                      Hash Cond: (d.pedido_id = pe.id)
+                                      Buffers: shared hit=5834
+                                      ->  Parallel Seq Scan on detalle_pedido d  (cost=0.00..6250.39 rows=208339 width=25) (actual time=0.025..18.015 rows=166671.33 loops=3)
+                                            Buffers: shared hit=4167
+                                      ->  Parallel Hash  (cost=3137.61..3137.61 rows=59197 width=16) (actual time=28.234..28.235 rows=33349.67 loops=3)
+                                            Buckets: 131072  Batches: 1  Memory Usage: 5760kB
+                                            Buffers: shared hit=1667
+                                            ->  Parallel Seq Scan on pedido pe  (cost=0.00..3137.61 rows=59197 width=16) (actual time=0.017..21.873 rows=50024.50 loops=2)
+                                                  Filter: (estado = 'ENTREGADO'::estado_pedido)
+                                                  Rows Removed by Filter: 49977
+                                                  Buffers: shared hit=1667
+                                ->  Hash  (cost=1363.06..1363.06 rows=50006 width=16) (actual time=29.165..29.166 rows=50006.00 loops=3)
+                                      Buckets: 65536  Batches: 1  Memory Usage: 2857kB
+                                      Buffers: shared hit=2589
+                                      ->  Seq Scan on producto p  (cost=0.00..1363.06 rows=50006 width=16) (actual time=0.820..13.340 rows=50006.00 loops=3)
+                                            Buffers: shared hit=2589
+                          ->  Hash  (cost=11.10..11.10 rows=110 width=186) (actual time=0.719..0.719 rows=3.00 loops=3)
+                                Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                Buffers: shared hit=3
+                                ->  Seq Scan on categoria c  (cost=0.00..11.10 rows=110 width=186) (actual time=0.703..0.705 rows=3.00 loops=3)
+                                      Buffers: shared hit=3
+Planning:
+  Buffers: shared hit=468
+Planning Time: 8.590 ms
+Execution Time: 540.832 ms

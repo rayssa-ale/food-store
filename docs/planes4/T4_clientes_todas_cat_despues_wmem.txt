@@ -1,0 +1,36 @@
+Nested Loop Anti Join  (cost=0.29..7440219.28 rows=10002 width=58) (actual time=556.402..591.448 rows=19983.00 loops=1)
+  Join Filter: (NOT (ANY ((c.id = (hashed SubPlan 2).col1) AND (ca.id = (hashed SubPlan 2).col2))))
+  Rows Removed by Join Filter: 59961
+  Buffers: shared hit=7021
+  ->  Index Scan using cliente_pkey on cliente c  (cost=0.29..1234.33 rows=20003 width=58) (actual time=0.013..4.413 rows=20003.00 loops=1)
+        Index Searches: 1
+        Buffers: shared hit=323
+  ->  Materialize  (cost=0.00..11.38 rows=55 width=8) (actual time=0.000..0.000 rows=3.00 loops=20003)
+        Storage: Memory  Maximum Storage: 17kB
+        Buffers: shared hit=1
+        ->  Seq Scan on categoria ca  (cost=0.00..11.10 rows=55 width=8) (actual time=0.011..0.014 rows=3.00 loops=1)
+              Filter: activo
+              Buffers: shared hit=1
+  SubPlan 2
+    ->  Hash Join  (cost=8155.20..19947.56 rows=500014 width=16) (actual time=84.073..397.147 rows=500014.00 loops=1)
+          Hash Cond: (d.producto_id = p.id)
+          Buffers: shared hit=6697
+          ->  Hash Join  (cost=6167.07..16646.78 rows=500014 width=16) (actual time=69.725..231.633 rows=500014.00 loops=1)
+                Hash Cond: (d.pedido_id = pe.id)
+                Buffers: shared hit=5834
+                ->  Seq Scan on detalle_pedido d  (cost=0.00..9167.14 rows=500014 width=16) (actual time=0.029..30.805 rows=500014.00 loops=1)
+                      Buffers: shared hit=4167
+                ->  Hash  (cost=3667.03..3667.03 rows=200003 width=16) (actual time=69.357..69.362 rows=200003.00 loops=1)
+                      Buckets: 262144  Batches: 1  Memory Usage: 11424kB
+                      Buffers: shared hit=1667
+                      ->  Seq Scan on pedido pe  (cost=0.00..3667.03 rows=200003 width=16) (actual time=0.017..23.076 rows=200003.00 loops=1)
+                            Buffers: shared hit=1667
+          ->  Hash  (cost=1363.06..1363.06 rows=50006 width=16) (actual time=14.247..14.248 rows=50006.00 loops=1)
+                Buckets: 65536  Batches: 1  Memory Usage: 2857kB
+                Buffers: shared hit=863
+                ->  Seq Scan on producto p  (cost=0.00..1363.06 rows=50006 width=16) (actual time=0.025..5.335 rows=50006.00 loops=1)
+                      Buffers: shared hit=863
+Planning:
+  Buffers: shared hit=63
+Planning Time: 1.063 ms
+Execution Time: 594.857 ms
