@@ -90,3 +90,19 @@ escritura en `sql/prueba_escritura_{antes,despues}.sql`.
   `REFRESH CONCURRENTLY`.
 
 Detalle, justificaciones y planes textuales: `informe_mediciones.md`.
+
+---
+
+## Entrega parcial del TPI (Unidades 1–3)
+
+- `docs/checklist_TPI.md` — los 9 objetivos de la entrega con su evidencia y
+  cómo verificarlos.
+- `informe_tecnico_TPI.md` — resumen por unidad: qué se implementó, cómo se
+  probó, resultados y optimizaciones antes/después.
+- `sql/procedimientos.sql` — funciones PL/pgSQL de negocio, función JSONB,
+  procedimiento con `CALL` y trigger con tabla de transición (objetivo 6):
+  ```powershell
+  & $psql -d food_store_tp5 -f sql/procedimientos.sql
+  & $psql -d food_store_tp5 -f sql/prueba_procedimientos_TPI.sql
+  ```
+- `duia.md` — bitácora de uso de IA de las sesiones.
