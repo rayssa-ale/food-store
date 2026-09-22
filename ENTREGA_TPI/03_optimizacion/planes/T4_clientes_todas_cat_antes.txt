@@ -1,0 +1,37 @@
+Nested Loop Anti Join  (cost=0.29..7455600.87 rows=10002 width=58) (actual time=0.124..551.708 rows=19983.00 loops=1)
+  Join Filter: (NOT EXISTS(SubPlan 1))
+  Rows Removed by Join Filter: 59961
+  Buffers: shared hit=841813
+  ->  Index Scan using cliente_pkey on cliente c  (cost=0.29..1234.33 rows=20003 width=58) (actual time=0.013..4.515 rows=20003.00 loops=1)
+        Index Searches: 1
+        Buffers: shared hit=323
+  ->  Materialize  (cost=0.00..11.38 rows=55 width=8) (actual time=0.000..0.000 rows=3.00 loops=20003)
+        Storage: Memory  Maximum Storage: 17kB
+        Buffers: shared hit=1
+        ->  Seq Scan on categoria ca  (cost=0.00..11.10 rows=55 width=8) (actual time=0.015..0.016 rows=3.00 loops=1)
+              Filter: activo
+              Buffers: shared hit=1
+  SubPlan 1
+    ->  Nested Loop  (cost=1.01..97.52 rows=8 width=0) (actual time=0.009..0.009 rows=1.00 loops=59981)
+          Buffers: shared hit=841489
+          ->  Nested Loop  (cost=0.72..89.52 rows=25 width=8) (actual time=0.003..0.005 rows=2.23 loops=59981)
+                Buffers: shared hit=440863
+                ->  Index Scan using idx_pedido_cliente on pedido pe  (cost=0.29..44.47 rows=10 width=8) (actual time=0.001..0.002 rows=1.34 loops=59981)
+                      Index Cond: (cliente_id = c.id)
+                      Index Searches: 59981
+                      Buffers: shared hit=200142
+                ->  Index Only Scan using uq_detalle_pedido_producto on detalle_pedido d  (cost=0.42..4.48 rows=3 width=16) (actual time=0.002..0.002 rows=1.66 loops=80240)
+                      Index Cond: (pedido_id = pe.id)
+                      Heap Fetches: 0
+                      Index Searches: 80240
+                      Buffers: shared hit=240721
+          ->  Index Scan using producto_pkey on producto p  (cost=0.29..0.32 rows=1 width=8) (actual time=0.002..0.002 rows=0.45 loops=133542)
+                Index Cond: (id = d.producto_id)
+                Filter: (categoria_id = ca.id)
+                Rows Removed by Filter: 1
+                Index Searches: 133542
+                Buffers: shared hit=400626
+Planning:
+  Buffers: shared hit=63
+Planning Time: 1.222 ms
+Execution Time: 553.184 ms

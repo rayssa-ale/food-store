@@ -1,0 +1,24 @@
+Limit  (cost=16860.16..16860.19 rows=10 width=31) (actual time=314.887..314.891 rows=10.00 loops=1)
+  Buffers: shared hit=4327 read=803
+  ->  Sort  (cost=16860.16..16985.18 rows=50006 width=31) (actual time=314.885..314.888 rows=10.00 loops=1)
+        Sort Key: (sum(d.cantidad)) DESC
+        Sort Method: top-N heapsort  Memory: 26kB
+        Buffers: shared hit=4327 read=803
+        ->  HashAggregate  (cost=15279.49..15779.55 rows=50006 width=31) (actual time=303.802..309.926 rows=50000.00 loops=1)
+              Group Key: p.id
+              Batches: 1  Memory Usage: 3865kB
+              Buffers: shared hit=4327 read=803
+              ->  Hash Join  (cost=1988.13..12719.42 rows=512014 width=27) (actual time=17.081..203.514 rows=512014.00 loops=1)
+                    Hash Cond: (d.producto_id = p.id)
+                    Buffers: shared hit=4327 read=803
+                    ->  Seq Scan on detalle_pedido d  (cost=0.00..9387.14 rows=512014 width=12) (actual time=0.170..30.096 rows=512014.00 loops=1)
+                          Buffers: shared hit=3464 read=803
+                    ->  Hash  (cost=1363.06..1363.06 rows=50006 width=23) (actual time=16.708..16.709 rows=50006.00 loops=1)
+                          Buckets: 65536  Batches: 1  Memory Usage: 3247kB
+                          Buffers: shared hit=863
+                          ->  Seq Scan on producto p  (cost=0.00..1363.06 rows=50006 width=23) (actual time=0.023..5.757 rows=50006.00 loops=1)
+                                Buffers: shared hit=863
+Planning:
+  Buffers: shared hit=112 read=1
+Planning Time: 4.796 ms
+Execution Time: 316.293 ms

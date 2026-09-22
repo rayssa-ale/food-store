@@ -1,0 +1,40 @@
+Limit  (cost=89029.46..89029.58 rows=50 width=72) (actual time=791.141..791.147 rows=50.00 loops=1)
+  Buffers: shared hit=68528
+  ->  Sort  (cost=89029.46..90071.32 rows=416745 width=72) (actual time=791.139..791.141 rows=50.00 loops=1)
+        Sort Key: (sum(((d.cantidad)::numeric * d.precio_unitario))) DESC
+        Sort Method: top-N heapsort  Memory: 33kB
+        Buffers: shared hit=68528
+        ->  GroupAggregate  (cost=2.76..75185.49 rows=416745 width=72) (actual time=0.397..750.120 rows=166857.00 loops=1)
+              Group Key: pe.id, c.nombre, c.apellido
+              Buffers: shared hit=68528
+              ->  Incremental Sort  (cost=2.76..62683.14 rows=416745 width=49) (actual time=0.385..511.018 rows=417378.00 loops=1)
+                    Sort Key: pe.id, c.nombre, c.apellido
+                    Presorted Key: pe.id
+                    Full-sort Groups: 12645  Sort Method: quicksort  Average Memory: 27kB  Peak Memory: 27kB
+                    Buffers: shared hit=68528
+                    ->  Merge Join  (cost=2.45..51376.88 rows=416745 width=49) (actual time=0.239..399.562 rows=417378.00 loops=1)
+                          Merge Cond: (pe.id = d.pedido_id)
+                          Buffers: shared hit=68528
+                          ->  Nested Loop  (cost=0.72..20672.78 rows=166696 width=32) (actual time=0.224..215.907 rows=166857.00 loops=1)
+                                Buffers: shared hit=62435
+                                ->  Index Scan using pedido_pkey on pedido pe  (cost=0.42..10466.47 rows=166696 width=16) (actual time=0.014..43.750 rows=166857.00 loops=1)
+                                      Filter: (estado <> 'CANCELADO'::estado_pedido)
+                                      Rows Removed by Filter: 33146
+                                      Index Searches: 1
+                                      Buffers: shared hit=2444
+                                ->  Memoize  (cost=0.30..0.33 rows=1 width=32) (actual time=0.001..0.001 rows=1.00 loops=166857)
+                                      Cache Key: pe.cliente_id
+                                      Cache Mode: logical
+                                      Hits: 146860  Misses: 19997  Evictions: 0  Overflows: 0  Memory Usage: 2734kB
+                                      Buffers: shared hit=59991
+                                      ->  Index Scan using cliente_pkey on cliente c  (cost=0.29..0.32 rows=1 width=32) (actual time=0.003..0.003 rows=1.00 loops=19997)
+                                            Index Cond: (id = pe.cliente_id)
+                                            Index Searches: 19997
+                                            Buffers: shared hit=59991
+                          ->  Index Scan using uq_detalle_pedido_producto on detalle_pedido d  (cost=0.42..24870.51 rows=500014 width=25) (actual time=0.011..84.805 rows=500014.00 loops=1)
+                                Index Searches: 1
+                                Buffers: shared hit=6093
+Planning:
+  Buffers: shared hit=79
+Planning Time: 2.639 ms
+Execution Time: 791.681 ms

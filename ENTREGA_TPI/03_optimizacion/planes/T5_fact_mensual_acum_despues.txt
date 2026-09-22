@@ -1,0 +1,36 @@
+WindowAgg  (cost=6416.01..7123.01 rows=25709 width=118) (actual time=121.484..224.383 rows=46322.00 loops=1)
+  Window: w1 AS (PARTITION BY c.id ORDER BY m.mes)
+  Storage: Memory  Maximum Storage: 17kB
+  Buffers: shared hit=1422, temp read=327 written=328
+  ->  Sort  (cost=6416.01..6480.28 rows=25709 width=46) (actual time=121.456..130.424 rows=46322.00 loops=1)
+        Sort Key: c.id, m.mes
+        Sort Method: external merge  Disk: 2616kB
+        Buffers: shared hit=1422, temp read=327 written=328
+        ->  Hash Join  (cost=2842.58..4532.83 rows=25709 width=46) (actual time=53.169..97.627 rows=46322.00 loops=1)
+              Hash Cond: (m.cliente_id = c.id)
+              Buffers: shared hit=1419
+              ->  Hash Join  (cost=2125.52..3743.53 rows=27512 width=30) (actual time=46.277..72.679 rows=46322.00 loops=1)
+                    Hash Cond: (m.cliente_id = mv_fact_cliente_mes.cliente_id)
+                    Buffers: shared hit=1152
+                    ->  Seq Scan on mv_fact_cliente_mes m  (cost=0.00..1401.32 rows=82532 width=22) (actual time=0.030..5.435 rows=82532.00 loops=1)
+                          Buffers: shared hit=576
+                    ->  Hash  (cost=2047.63..2047.63 rows=6231 width=8) (actual time=46.215..46.218 rows=8017.00 loops=1)
+                          Buckets: 8192  Batches: 1  Memory Usage: 378kB
+                          Buffers: shared hit=576
+                          ->  HashAggregate  (cost=1813.98..2047.63 rows=6231 width=8) (actual time=41.325..44.603 rows=8017.00 loops=1)
+                                Group Key: mv_fact_cliente_mes.cliente_id
+                                Filter: (count(*) >= 5)
+                                Batches: 1  Memory Usage: 1561kB
+                                Rows Removed by Filter: 11865
+                                Buffers: shared hit=576
+                                ->  Seq Scan on mv_fact_cliente_mes  (cost=0.00..1401.32 rows=82532 width=8) (actual time=0.007..8.340 rows=82532.00 loops=1)
+                                      Buffers: shared hit=576
+              ->  Hash  (cost=467.03..467.03 rows=20003 width=32) (actual time=6.828..6.829 rows=20003.00 loops=1)
+                    Buckets: 32768  Batches: 1  Memory Usage: 1524kB
+                    Buffers: shared hit=267
+                    ->  Seq Scan on cliente c  (cost=0.00..467.03 rows=20003 width=32) (actual time=0.017..2.410 rows=20003.00 loops=1)
+                          Buffers: shared hit=267
+Planning:
+  Buffers: shared hit=61
+Planning Time: 2.209 ms
+Execution Time: 236.047 ms
