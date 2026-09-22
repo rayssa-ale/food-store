@@ -1,0 +1,47 @@
+GroupAggregate  (cost=32473.41..68733.49 rows=243411 width=230) (actual time=574.436..888.866 rows=117.00 loops=1)
+  Group Key: c.nombre, (date_trunc('month'::text, pe.fecha)), pe.forma_pago
+  Buffers: shared hit=6279, temp read=1195 written=1198
+  ->  Gather Merge  (cost=32473.41..60822.63 rows=243411 width=199) (actual time=573.769..749.385 rows=250070.00 loops=1)
+        Workers Planned: 2
+        Workers Launched: 2
+        Buffers: shared hit=6279, temp read=1195 written=1198
+        ->  Sort  (cost=31473.39..31726.94 rows=101421 width=199) (actual time=499.775..529.144 rows=83356.67 loops=3)
+              Sort Key: c.nombre, (date_trunc('month'::text, pe.fecha)), pe.forma_pago
+              Sort Method: external merge  Disk: 3296kB
+              Buffers: shared hit=6279, temp read=1195 written=1198
+              Worker 0:  Sort Method: external merge  Disk: 3528kB
+              Worker 1:  Sort Method: external merge  Disk: 2736kB
+              ->  Hash Join  (cost=5574.52..13331.23 rows=101421 width=199) (actual time=53.820..319.753 rows=83356.67 loops=3)
+                    Hash Cond: (p.categoria_id = c.id)
+                    Buffers: shared hit=6231
+                    ->  Parallel Hash Join  (cost=5562.05..12788.72 rows=101421 width=29) (actual time=52.963..238.024 rows=83356.67 loops=3)
+                          Hash Cond: (d.producto_id = p.id)
+                          Buffers: shared hit=6228
+                          ->  Parallel Hash Join  (cost=4066.92..11027.34 rows=101421 width=29) (actual time=41.026..164.671 rows=83356.67 loops=3)
+                                Hash Cond: (d.pedido_id = pe.id)
+                                Buffers: shared hit=6034
+                                ->  Parallel Seq Scan on detalle_pedido d  (cost=0.00..6400.39 rows=213339 width=25) (actual time=0.046..26.498 rows=170671.33 loops=3)
+                                      Buffers: shared hit=4267
+                                ->  Parallel Hash  (cost=3325.85..3325.85 rows=59286 width=20) (actual time=39.828..39.829 rows=33349.67 loops=3)
+                                      Buckets: 131072  Batches: 1  Memory Usage: 6528kB
+                                      Buffers: shared hit=1767
+                                      ->  Parallel Seq Scan on pedido pe  (cost=0.00..3325.85 rows=59286 width=20) (actual time=0.028..23.188 rows=33349.67 loops=3)
+                                            Filter: (estado = 'ENTREGADO'::estado_pedido)
+                                            Rows Removed by Filter: 37318
+                                            Buffers: shared hit=1767
+                          ->  Parallel Hash  (cost=1234.68..1234.68 rows=20836 width=16) (actual time=11.702..11.703 rows=16668.67 loops=3)
+                                Buckets: 65536  Batches: 1  Memory Usage: 2880kB
+                                Buffers: shared hit=194
+                                ->  Parallel Index Only Scan using ix_producto_cat_cover on producto p  (cost=0.29..1234.68 rows=20836 width=16) (actual time=0.037..13.277 rows=50006.00 loops=1)
+                                      Heap Fetches: 0
+                                      Index Searches: 1
+                                      Buffers: shared hit=194
+                    ->  Hash  (cost=11.10..11.10 rows=110 width=186) (actual time=0.805..0.805 rows=3.00 loops=3)
+                          Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                          Buffers: shared hit=3
+                          ->  Seq Scan on categoria c  (cost=0.00..11.10 rows=110 width=186) (actual time=0.779..0.781 rows=3.00 loops=3)
+                                Buffers: shared hit=3
+Planning:
+  Buffers: shared hit=416
+Planning Time: 15.148 ms
+Execution Time: 905.820 ms

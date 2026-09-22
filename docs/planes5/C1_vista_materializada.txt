@@ -1,0 +1,4 @@
+Seq Scan on mv_facturacion_categoria_mes_pago  (cost=0.00..2.17 rows=117 width=34) (actual time=0.007..0.012 rows=117.00 loops=1)
+  Buffers: shared hit=1
+Planning Time: 0.033 ms
+Execution Time: 0.022 ms
