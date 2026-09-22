@@ -1,0 +1,32 @@
+Limit  (cost=151.31..151.33 rows=9 width=56) (actual time=0.317..0.319 rows=6.00 loops=1)
+  Buffers: shared hit=38
+  ->  Sort  (cost=151.31..151.33 rows=9 width=56) (actual time=0.316..0.317 rows=6.00 loops=1)
+        Sort Key: pe.fecha DESC
+        Sort Method: quicksort  Memory: 25kB
+        Buffers: shared hit=38
+        ->  GroupAggregate  (cost=150.76..151.16 rows=9 width=56) (actual time=0.275..0.286 rows=6.00 loops=1)
+              Group Key: pe.id
+              Buffers: shared hit=35
+              ->  Sort  (cost=150.76..150.82 rows=23 width=33) (actual time=0.252..0.254 rows=13.00 loops=1)
+                    Sort Key: pe.id
+                    Sort Method: quicksort  Memory: 25kB
+                    Buffers: shared hit=35
+                    ->  Nested Loop  (cost=4.79..150.24 rows=23 width=33) (actual time=0.117..0.239 rows=13.00 loops=1)
+                          Buffers: shared hit=35
+                          ->  Bitmap Heap Scan on pedido pe  (cost=4.37..42.20 rows=9 width=24) (actual time=0.079..0.102 rows=6.00 loops=1)
+                                Recheck Cond: (cliente_id = 1421)
+                                Filter: (estado <> 'CANCELADO'::estado_pedido)
+                                Heap Blocks: exact=6
+                                Buffers: shared hit=11
+                                ->  Bitmap Index Scan on idx_pedido_cliente  (cost=0.00..4.37 rows=10 width=0) (actual time=0.047..0.047 rows=6.00 loops=1)
+                                      Index Cond: (cliente_id = 1421)
+                                      Index Searches: 1
+                                      Buffers: shared hit=5
+                          ->  Index Scan using uq_detalle_pedido_producto on detalle_pedido d  (cost=0.42..11.97 rows=3 width=17) (actual time=0.020..0.021 rows=2.17 loops=6)
+                                Index Cond: (pedido_id = pe.id)
+                                Index Searches: 6
+                                Buffers: shared hit=24
+Planning:
+  Buffers: shared hit=165
+Planning Time: 10.810 ms
+Execution Time: 0.398 ms

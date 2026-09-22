@@ -1,0 +1,26 @@
+Limit  (cost=1608.88..1609.00 rows=50 width=32) (actual time=30.546..30.554 rows=50.00 loops=1)
+  Buffers: shared hit=886
+  ->  Sort  (cost=1608.88..1609.84 rows=383 width=32) (actual time=30.543..30.546 rows=50.00 loops=1)
+        Sort Key: p.nombre, p.id
+        Sort Method: top-N heapsort  Memory: 28kB
+        Buffers: shared hit=886
+        ->  Nested Loop  (cost=292.96..1596.16 rows=383 width=32) (actual time=0.851..16.199 rows=14092.00 loops=1)
+              Buffers: shared hit=880
+              ->  Index Scan using uq_categoria_nombre on categoria c  (cost=0.14..8.16 rows=1 width=8) (actual time=0.027..0.030 rows=1.00 loops=1)
+                    Index Cond: ((nombre)::text = 'Pizzas'::text)
+                    Index Searches: 1
+                    Buffers: shared hit=2
+              ->  Bitmap Heap Scan on producto p  (cost=292.82..1447.53 rows=14047 width=40) (actual time=0.819..13.663 rows=14092.00 loops=1)
+                    Recheck Cond: ((c.id = categoria_id) AND activo)
+                    Filter: ((precio >= '700'::numeric) AND (precio <= '4500'::numeric))
+                    Rows Removed by Filter: 2577
+                    Heap Blocks: exact=863
+                    Buffers: shared hit=878
+                    ->  Bitmap Index Scan on idx_producto_categoria  (cost=0.00..289.31 rows=16669 width=0) (actual time=0.677..0.677 rows=16669.00 loops=1)
+                          Index Cond: (categoria_id = c.id)
+                          Index Searches: 1
+                          Buffers: shared hit=15
+Planning:
+  Buffers: shared hit=170
+Planning Time: 6.188 ms
+Execution Time: 30.645 ms

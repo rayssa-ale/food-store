@@ -1,0 +1,18 @@
+Limit  (cost=1785.29..1785.54 rows=100 width=32) (actual time=14.173..14.185 rows=100.00 loops=1)
+  Buffers: shared hit=878
+  ->  Sort  (cost=1785.29..1807.45 rows=8863 width=32) (actual time=14.170..14.176 rows=100.00 loops=1)
+        Sort Key: precio, id
+        Sort Method: top-N heapsort  Memory: 36kB
+        Buffers: shared hit=878
+        ->  Bitmap Heap Scan on producto p  (cost=291.62..1446.56 rows=8863 width=32) (actual time=1.114..10.592 rows=8792.00 loops=1)
+              Recheck Cond: ((categoria_id = 2) AND activo)
+              Filter: ((precio >= '600'::numeric) AND (precio <= '3000'::numeric))
+              Rows Removed by Filter: 7877
+              Heap Blocks: exact=863
+              Buffers: shared hit=878
+              ->  Bitmap Index Scan on idx_producto_categoria  (cost=0.00..289.41 rows=16682 width=0) (actual time=0.918..0.918 rows=16669.00 loops=1)
+                    Index Cond: (categoria_id = 2)
+                    Index Searches: 1
+                    Buffers: shared hit=15
+Planning Time: 0.155 ms
+Execution Time: 14.242 ms
