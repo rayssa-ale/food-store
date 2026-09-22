@@ -1,0 +1,16 @@
+Sort  (cost=3639.81..3682.22 rows=16967 width=32) (actual time=9.324..10.611 rows=16809.00 loops=1)
+  Sort Key: fecha, id
+  Sort Method: quicksort  Memory: 1556kB
+  Buffers: shared hit=1735
+  ->  Bitmap Heap Scan on pedido pe  (cost=426.33..2447.84 rows=16967 width=32) (actual time=1.319..5.187 rows=16809.00 loops=1)
+        Recheck Cond: ((fecha >= '2026-01-01 00:00:00-03'::timestamp with time zone) AND (fecha < '2026-02-01 00:00:00-03'::timestamp with time zone))
+        Heap Blocks: exact=1667
+        Buffers: shared hit=1735
+        ->  Bitmap Index Scan on ix_pedido_fecha_estado  (cost=0.00..422.09 rows=16967 width=0) (actual time=1.129..1.129 rows=16809.00 loops=1)
+              Index Cond: ((fecha >= '2026-01-01 00:00:00-03'::timestamp with time zone) AND (fecha < '2026-02-01 00:00:00-03'::timestamp with time zone))
+              Index Searches: 1
+              Buffers: shared hit=68
+Planning:
+  Buffers: shared hit=46
+Planning Time: 0.343 ms
+Execution Time: 11.469 ms
