@@ -1,0 +1,8 @@
+# Respaldo de la base (se generan con pg_dump; NO versionar)
+respaldos/*.sql
+
+# Python / temporales
+__pycache__/
+*.pyc
+.venv/
+*.tmp
