@@ -9,8 +9,9 @@ cátedra; el cruce completo está en `checklist_TPI.md`.
 |---|---|
 | `informe_tecnico_TPI.md` | Resumen por unidad (qué/probado/resultados/optimizaciones/IA) |
 | `checklist_TPI.md` | Los 9 objetivos → evidencia → cómo verificarlos |
+| `evidencia_ejecucion.md` | **Capturas reales del motor** (salidas de verificación, planes EXPLAIN antes/después, mensajes R8–R10) |
 | `duia.md` | Declaración de uso de IA (bitácora de sesiones) |
-| `TPI_Food_Store_EntregaParcial.pdf` | Consolidado en un solo PDF |
+| `TPI_Food_Store_EntregaParcial.pdf` | Consolidado en un solo PDF (incluye la evidencia) |
 
 ## 1 · Unidad 1 — Integridad, transacciones y concurrencia
 
@@ -23,8 +24,9 @@ cátedra; el cruce completo está en `checklist_TPI.md`.
   UNIQUE, CHECK e índices; soft delete con `activo` (objetivos **4, 7, 9**).
 - `seed.sql` — datos iniciales para probar.
 - `restricciones.sql` + `pruebas_validas_restricciones.sql` +
-  `casos_invalidos_restricciones.sql` — reglas R8–R10 con triggers PL/pgSQL
-  (objetivo **7**).
+  `casos_invalidos_restricciones.sql` + `evidencia_restricciones_TPI.sql`
+  (del repo, `sql/`) — reglas R8–R10 con triggers PL/pgSQL y su demostración
+  en el motor con SAVEPOINT/ROLLBACK (objetivo **7**).
 - `informe_concurrencia.md` y `ejercicio_lectura_critica.md` — atomicidad,
   COMMIT/ROLLBACK, niveles de aislamiento (READ COMMITTED vs REPEATABLE READ)
   y control de concurrencia con 2 sesiones (objetivo **8**).
