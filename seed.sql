@@ -41,4 +41,12 @@ INSERT INTO detalle_pedido (id, pedido_id, producto_id, cantidad, precio_unitari
     (4, 2, 5, 2,  500.00),
     (5, 3, 6, 3,  950.00);
 
+-- Sincroniza las secuencias identity después de insertar ids fijos,
+-- para que el próximo GENERATED ALWAYS AS IDENTITY no colisione.
+SELECT setval(pg_get_serial_sequence('categoria', 'id'),      (SELECT max(id) FROM categoria));
+SELECT setval(pg_get_serial_sequence('producto', 'id'),       (SELECT max(id) FROM producto));
+SELECT setval(pg_get_serial_sequence('cliente', 'id'),        (SELECT max(id) FROM cliente));
+SELECT setval(pg_get_serial_sequence('pedido', 'id'),         (SELECT max(id) FROM pedido));
+SELECT setval(pg_get_serial_sequence('detalle_pedido', 'id'), (SELECT max(id) FROM detalle_pedido));
+
 COMMIT;
