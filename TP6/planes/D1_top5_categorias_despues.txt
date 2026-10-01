@@ -1,0 +1,25 @@
+﻿                                                                     QUERY PLAN                                                                      
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=11.67..11.68 rows=3 width=14) (actual time=0.086..0.087 rows=3.00 loops=1)
+   Output: categoria_nombre, total_vendido
+   Buffers: shared hit=6
+   ->  Sort  (cost=11.67..11.68 rows=3 width=14) (actual time=0.084..0.085 rows=3.00 loops=1)
+         Output: categoria_nombre, total_vendido
+         Sort Key: fv.total_vendido DESC
+         Sort Method: quicksort  Memory: 25kB
+         Buffers: shared hit=6
+         ->  Bitmap Heap Scan on public.fact_venta_categoria_dia fv  (cost=4.30..11.65 rows=3 width=14) (actual time=0.042..0.043 rows=3.00 loops=1)
+               Output: categoria_nombre, total_vendido
+               Recheck Cond: (fv.fecha = CURRENT_DATE)
+               Heap Blocks: exact=1
+               Buffers: shared hit=3
+               ->  Bitmap Index Scan on pk_fact_venta_categoria_dia  (cost=0.00..4.30 rows=3 width=0) (actual time=0.016..0.016 rows=7.00 loops=1)
+                     Index Cond: (fv.fecha = CURRENT_DATE)
+                     Index Searches: 1
+                     Buffers: shared hit=2
+ Planning:
+   Buffers: shared hit=121
+ Planning Time: 2.789 ms
+ Execution Time: 0.155 ms
+(21 filas)
+

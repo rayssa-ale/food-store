@@ -1,0 +1,131 @@
+﻿BEGIN
+DROP TABLE
+psql.exe : psql:C:/Users/alejo/OneDrive/Desktop/Food Store/TP6/tp_fnbc_control_lote.sql:125: NOTICE:  la tabla 
+┬½control_lote_almacen┬╗ no existe, omitiendo
+En línea: 1 Carácter: 82
++ ... \psql.exe'; & $psql -U postgres -h localhost -d food_store_tp6 -v ON_ ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (psql:C:/Users/a...iste, omitiendo:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+psql:C:/Users/alejo/OneDrive/Desktop/Food Store/TP6/tp_fnbc_control_lote.sql:126: NOTICE:  la tabla ┬½control_lote┬╗ 
+no existe, omitiendo
+DROP TABLE
+psql:C:/Users/alejo/OneDrive/Desktop/Food Store/TP6/tp_fnbc_control_lote.sql:127: NOTICE:  la tabla 
+┬½responsable_deposito┬╗ no existe, omitiendo
+DROP TABLE
+psql:C:/Users/alejo/OneDrive/Desktop/Food Store/TP6/tp_fnbc_control_lote.sql:128: NOTICE:  la tabla ┬½usuario┬╗ no 
+existe, omitiendo
+DROP TABLE
+DROP TABLE
+psql:C:/Users/alejo/OneDrive/Desktop/Food Store/TP6/tp_fnbc_control_lote.sql:129: NOTICE:  la tabla ┬½lote┬╗ no 
+existe, omitiendo
+psql:C:/Users/alejo/OneDrive/Desktop/Food Store/TP6/tp_fnbc_control_lote.sql:130: NOTICE:  la tabla ┬½deposito┬╗ no 
+existe, omitiendo
+DROP TABLE
+DROP VIEW
+psql:C:/Users/alejo/OneDrive/Desktop/Food Store/TP6/tp_fnbc_control_lote.sql:131: NOTICE:  la vista 
+┬½control_lote_almacen_compat┬╗ no existe, omitiendo
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+INSERT 0 2
+INSERT 0 4
+INSERT 0 3
+INSERT 0 3
+
+=== ANOMAL├ìA 1 ÔÇö INSERCI├ôN: no se puede dar de alta a un responsable sin inventar un lote ===
+SAVEPOINT
+INSERT 0 1
+ lote_id | deposito_id | responsable_control_id 
+---------+-------------+------------------------
+     501 |          30 |                    801
+     502 |          30 |                    801
+     503 |          31 |                    802
+     504 |          31 |                    803
+(4 filas)
+
+ROLLBACK
+
+=== ANOMAL├ìA 2 ÔÇö BORRADO: al cerrar una asignaci├│n se borra el dep├│sito del responsable ===
+SAVEPOINT
+ responsable_control_id | deposito_id 
+------------------------+-------------
+                    802 |          31
+(1 fila)
+
+DELETE 1
+ surviving_rows_about_user_802 
+-------------------------------
+                             0
+(1 fila)
+
+ROLLBACK
+
+=== ANOMAL├ìA 3 ÔÇö ACTUALIZACI├ôN: un traslado de dep├│sito exige tocar todas las filas, y si se hace a medias el mismo responsable queda en dos dep├│sitos ===
+SAVEPOINT
+DELETE 1
+INSERT 0 1
+ responsable_control_id | depositos_al_que_pertenece 
+------------------------+----------------------------
+                    801 |                          2
+(1 fila)
+
+ROLLBACK
+CREATE TABLE
+CREATE TABLE
+CREATE INDEX
+DO
+INSERT 0 2
+INSERT 0 3
+CREATE VIEW
+ diferencia | lote_id | deposito_id | responsable_control_id 
+------------+---------+-------------+------------------------
+(0 filas)
+
+ diferencia | lote_id | deposito_id | responsable_control_id 
+------------+---------+-------------+------------------------
+(0 filas)
+
+ lote_id | deposito_id | responsable_control_id 
+---------+-------------+------------------------
+     501 |          30 |                    801
+     502 |          30 |                    801
+     503 |          31 |                    802
+(3 filas)
+
+ responsable_control_id | deposito_id |          created_at           
+------------------------+-------------+-------------------------------
+                    801 |          30 | 2026-10-01 09:06:36.394276-03
+                    802 |          31 | 2026-10-01 09:06:36.394276-03
+(2 filas)
+
+ lote_id | deposito_id |          created_at           
+---------+-------------+-------------------------------
+     501 |          30 | 2026-10-01 09:06:36.394276-03
+     502 |          30 | 2026-10-01 09:06:36.394276-03
+     503 |          31 | 2026-10-01 09:06:36.394276-03
+(3 filas)
+
+ responsable_control_id | veces 
+------------------------+-------
+(0 filas)
+
+COMMIT
+   lado   | filas 
+----------+-------
+ original |     3
+ vista    |     3
+(2 filas)
+
+   lado   |   firma    
+----------+------------
+ original | 1506093404
+ vista    | 1506093404
+(2 filas)
+
+ lote_id | deposito_id | veces 
+---------+-------------+-------
+(0 filas)
+

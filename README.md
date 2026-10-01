@@ -13,8 +13,64 @@ decide). El código fuente vive en la raíz y en `sql/`.
 | **TP3** — Optimización: filtros, índices, planes | `TP3/` | carga masiva, queries, optimizaciones, equivalencias EXCEPT, competencia ×42, DUIA, `TP3_Food_Store.pdf` | `0a2b1d8`, `352e67a`, `f09a3e1`, `a94cee0` |
 | **TP4** — Analíticas: joins, agregación, ventana | `TP4/` | queries_tp4, MVs T1/T5, lectura crítica, equivalencias EXCEPT, competencia ×3.5, DUIA, `TP4_Food_Store.pdf` | `57c1529`, `b073fba`, `c9f64cd` |
 | **TP5** — Índices, vistas y vistas materializadas | `TP5/` | índices (×1.6 / ×30 / ×2), vistas + seguridad, MV ×41.000, `informe_mediciones.md`, `duia.md`, `TP5_Food_Store.pdf` | `a3f3844`, `ed24029`, `b73529e`, `44a74b1`, `edd0abc` |
+| **TP6** — Unidad 4: FNBC y desnormalización controlada | `TP6/` (+ `tp_fnbc_control_lote.sql`, `tp_desnormalizacion_top_categorias.sql` en la raíz) | descomposición BCNF de `control_lote_almacen` (2 tablas + vista, unión sin pérdida), cubo `fact_venta_categoria_dia` con disparadores ×1.170, auditoría de desincronización vacía, `TP6_Food_Store.pdf` | — |
 
 Historial completo: `git log --oneline` (cada commit describe su pieza y su evidencia).
+
+---
+
+## TP6 (Unidad 4): FNBC y desnormalización controlada
+
+Dos herramientas de la Unidad 4 aplicadas sobre Food Store, con la misma
+regla en ambas: ninguna decisión de diseño se toma por intuición.
+
+**Parte 1 — FNBC sobre `control_lote_almacen`.** La DF
+`{LoteID, DepositoID} → {ResponsableControlID}` no viola nada (su
+determinante es la PK), pero `ResponsableControlID → DepositoID` sí: su
+determinante no es superclave. El esquema tiene **tres** claves candidatas
+sobre dos atributos y **ningún** atributo no primo, o sea que cumple 3FN y
+no cumple FNBC — el caso donde las dos definiciones se separan. La
+descomposición produce `responsable_deposito` + `control_lote`, ambas en
+FNBC, con reunión sin pérdida por el criterio de superclave sobre
+`DepositoID`. Las tres anomalías se demuestran con SQL dentro de savepoints.
+
+**Parte 2 — desnormalización controlada del top 5 por día.** El plan de la
+consulta de 4 tablas está dominado por `Parallel Seq Scan` sobre
+`detalle_pedido`: lee ~549.529 filas para responder sobre ~31.372 líneas
+del día. Se agrega `fact_venta_categoria_dia` (grano día × categoría)
+mantenida por disparadores — camino caliente incremental para líneas,
+camino frío con recálculo del día para cambios de alcance ancho — y el
+panel pasa a leer 3 filas de 1 bloque.
+
+```powershell
+$env:PGPASSWORD = '<contraseña>'
+$psql = 'C:\Program Files\PostgreSQL\18\bin\psql.exe'
+
+# copia de trabajo (protocolo de seguridad) + respaldo previo
+# pg_dump -U postgres food_store_tp5 > respaldos/food_store_tp5_20261001_antes_tp6.sql
+# createdb -U postgres -T food_store_tp5 food_store_tp6
+
+# día corriente medible (la carga de TP3 siembra ~580 pedidos/día)
+& $psql -d food_store_tp6 -f TP6/carga_dia_actual.sql
+
+& $psql -d food_store_tp6 -v ON_ERROR_STOP=1 -f tp_fnbc_control_lote.sql
+& $psql -d food_store_tp6 -v ON_ERROR_STOP=1 -f tp_desnormalizacion_top_categorias.sql
+```
+
+| Antes (4 tablas) | Después (cubo) |
+|---|---|
+| Parallel Seq Scan — ~549.529 filas, 5.004 buffers | Bitmap Index + Heap Scan — 3 filas, 6 buffers |
+| **138,0 ms** (233,2 ms en frío) | **0,118 ms** |
+
+Dos desvíos del enunciado, documentados en el script y en el informe: el
+esquema real no tiene `eliminado` ni `subtotal` (la baja lógica es el ENUM
+`estado_pedido` y el subtotal es `cantidad * precio_unitario`), y
+`fecha = CURRENT_DATE` sobre un TIMESTAMPTZ devuelve 0 filas de los 12.269
+pedidos de un día real — se usa predicado de rango. Sin esa corrección el
+`EXPLAIN` mide un conjunto vacío.
+
+Detalle, justificaciones y planes: `TP6/informe_tp6.md` y
+`TP6/planes/`.
 
 ---
 
