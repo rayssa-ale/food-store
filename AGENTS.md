@@ -8,10 +8,11 @@ Los scripts PostgreSQL sustentan los TP de integridad y concurrencia (TP2).
 - `schema.sql` — DDL definitivo (enums, 5 tablas, 3 índices; reglas R1–R7).
 - `seed.sql` — carga inicial (3 categorías, 6 productos, 3 clientes, 3 pedidos, 5 líneas).
 - `sql/restricciones.sql` — triggers de reglas de negocio evaluadas en TP2 Parte 1.
-- `TP6/` — Unidad 4: `tp_fnbc_control_lote.sql` (FNBC) y
-  `tp_desnormalizacion_top_categorias.sql` (cubo con disparadores), más
-  `carga_dia_actual.sql` que siembra el día corriente para que el
-  `EXPLAIN ANALYZE` del reporte no mida un conjunto vacío.
+- `TP6/` — Unidad 4 (entrega): `tp_fnbc_control_lote.sql` (FNBC),
+  `tp_desnormalizacion_top_categorias.sql` (cubo con disparadores),
+  `TP6_Food_Store.pdf` (informe) y `carga_dia_actual.sql`, que siembra el
+  día corriente para que el `EXPLAIN ANALYZE` del reporte no mida un
+  conjunto vacío. Los .sql también están en la raíz del repo.
 - `protocolo_seguridad.md` — protocolo copia / transacción / respaldo.
 - `docs/` — informes de laboratorio (concurrencia, lectura crítica) y DUIA.
 - `.kiro/` — steering docs compartidos con la herramienta Kiro.
