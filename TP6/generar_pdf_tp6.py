@@ -50,6 +50,9 @@ S = {
                            fontSize=7.4, leading=8.9,
                            backColor=colors.HexColor("#f3f4f6"),
                            borderPadding=4, spaceBefore=4, spaceAfter=8),
+    "planwrap": ParagraphStyle("planwrap", fontName="Courier", fontSize=6.5,
+                              leading=7.7, backColor=colors.HexColor("#f3f4f6"),
+                              borderPadding=4, spaceBefore=4, spaceAfter=8),
     "cell": ParagraphStyle("cell", parent=styles["BodyText"], fontSize=8.2, leading=10.4),
     "cellb": ParagraphStyle("cellb", parent=styles["BodyText"], fontSize=8.2,
                             leading=10.4, fontName="Helvetica-Bold"),
@@ -71,12 +74,30 @@ def filas_tabla(linea):
     return [c.strip() for c in linea.strip().strip("|").split("|")]
 
 
+def plan_preformateado(lineas):
+    """Renderiza un plan EXPLAIN como parrafos monoespaciados que envuelven.
+
+    Los planes tienen lineas de hasta ~220 caracteres: con Preformatted se
+    salen del marco, asi que cada linea se emite como Paragraph con el
+    sangrado preservado como espacios duros.
+    """
+    flujos = []
+    for ln in lineas:
+        if not ln.strip():
+            flujos.append(Spacer(1, 4))
+            continue
+        sangria = len(ln) - len(ln.lstrip(" "))
+        txt = ("&nbsp;" * sangria) + ln.strip().replace("&", "&amp;").replace("<", "&lt;")
+        flujos.append(Paragraph(txt, S["planwrap"]))
+    return flujos
+
+
 def construir_flujos(md):
     with open(md, encoding="utf-8") as fh:
         lineas = fh.read().splitlines()
 
     flujos, buf_tabla = [], []
-    en_codigo, cod = False, []
+    en_codigo, cod, idioma = False, [], ""
 
     def cerrar_tabla():
         if not buf_tabla:
@@ -106,11 +127,16 @@ def construir_flujos(md):
 
         if l.startswith("```"):
             if en_codigo:
-                flujos.append(Preformatted("\n".join(cod), S["code"]))
-                cod, en_codigo = [], False
+                if len(idioma) > 0:
+                    flujos.append(Preformatted("\n".join(cod), S["code"]))
+                else:
+                    flujos.extend(plan_preformateado(cod))
+                    flujos.append(Spacer(1, 4))
+                cod, en_codigo, idioma = [], False, ""
             else:
                 cerrar_tabla()
                 en_codigo = True
+                idioma = l[3:].strip().lower()
             i += 1
             continue
         if en_codigo:
@@ -151,7 +177,11 @@ def construir_flujos(md):
         i += 1
 
     if en_codigo and cod:
-        flujos.append(Preformatted("\n".join(cod), S["code"]))
+        if len(idioma) > 0:
+            flujos.append(Preformatted("\n".join(cod), S["code"]))
+        else:
+            flujos.extend(plan_preformateado(cod))
+            flujos.append(Spacer(1, 4))
     cerrar_tabla()
     return flujos
 
