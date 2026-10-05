@@ -13,7 +13,7 @@ decide). El código fuente vive en la raíz y en `sql/`.
 | **TP3** — Optimización: filtros, índices, planes | `TP3/` | carga masiva, queries, optimizaciones, equivalencias EXCEPT, competencia ×42, DUIA, `TP3_Food_Store.pdf` | `0a2b1d8`, `352e67a`, `f09a3e1`, `a94cee0` |
 | **TP4** — Analíticas: joins, agregación, ventana | `TP4/` | queries_tp4, MVs T1/T5, lectura crítica, equivalencias EXCEPT, competencia ×3.5, DUIA, `TP4_Food_Store.pdf` | `57c1529`, `b073fba`, `c9f64cd` |
 | **TP5** — Índices, vistas y vistas materializadas | `TP5/` | índices (×1.6 / ×30 / ×2), vistas + seguridad, MV ×41.000, `informe_mediciones.md`, `duia.md`, `TP5_Food_Store.pdf` | `a3f3844`, `ed24029`, `b73529e`, `44a74b1`, `edd0abc` |
-| **TP6** — Unidad 4: FNBC y desnormalización controlada | `TP6/` (+ `tp_fnbc_control_lote.sql`, `tp_desnormalizacion_top_categorias.sql` en la raíz) | descomposición BCNF de `control_lote_almacen` (2 tablas + vista, unión sin pérdida), cubo `fact_venta_categoria_dia` con disparadores ×1.170, auditoría de desincronización vacía, `TP6_Food_Store.pdf` | — |
+| **TP6** — Unidad 4: FNBC y desnormalización controlada | `TP6/` (+ `tp_fnbc_control_lote.sql`, `tp_desnormalizacion_top_categorias.sql` en la raíz) | descomposición BCNF de `control_lote_almacen` (2 tablas + vista, unión sin pérdida), cubo `fact_venta_categoria_dia` con disparadores ×1.170, auditoría de desincronización vacía, `TP6_Food_Store.pdf` | `b2bde0d`, `aa59180` |
 
 Historial completo: `git log --oneline` (cada commit describe su pieza y su evidencia).
 
