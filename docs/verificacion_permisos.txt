@@ -1,0 +1,10 @@
+﻿=== SALIDA DE VERIFICACIÓN - PARTE A ===
+Fecha: 2026-10-24 00:12:01
+
+=== ROLES Y ATRIBUTOS (\du) ===
+(Ejecutar: \du en psql)
+
+=== PRIVILEGIOS POR ROL ===
+(Ejecutar consulta sobre information_schema.role_table_grants)
+
+NOTA: Los resultados se deben obtener ejecutando los scripts en el entorno PostgreSQL.
