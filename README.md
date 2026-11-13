@@ -14,8 +14,91 @@ decide). El código fuente vive en la raíz y en `sql/`.
 | **TP4** — Analíticas: joins, agregación, ventana | `TP4/` | queries_tp4, MVs T1/T5, lectura crítica, equivalencias EXCEPT, competencia ×3.5, DUIA, `TP4_Food_Store.pdf` | `57c1529`, `b073fba`, `c9f64cd` |
 | **TP5** — Índices, vistas y vistas materializadas | `TP5/` | índices (×1.6 / ×30 / ×2), vistas + seguridad, MV ×41.000, `informe_mediciones.md`, `duia.md`, `TP5_Food_Store.pdf` | `a3f3844`, `ed24029`, `b73529e`, `44a74b1`, `edd0abc` |
 | **TP6** — Unidad 4: FNBC y desnormalización controlada | `TP6/` | `tp_fnbc_control_lote.sql`, `tp_desnormalizacion_top_categorias.sql`, `TP6_Food_Store.pdf` | `b2bde0d`, `aa59180` |
+| **U5** — Seguridad: roles, auditoría y anonimización | `sql/`, `docs/` | roles, triggers, logs, informes y verificación de equivalencia | pendiente |
+| **U6** — Mantenimiento, respaldo y recuperación | `U6/` | SPEC, backup/health/maintenance/restore, `informe_u6.pdf`, evidencias | pendiente |
+| **U8** — Food Store en la feria: SQLite + semáforo | `movil/`, `docs/` | schema/pruebas/semaforo SQLite, snapshot CSV, db, `informe.pdf`, specs Kiro, bitácora y DUIA | `4b97f27`, `c6837c7`, `46a6634` |
 
 Historial completo: `git log --oneline` (cada commit describe su pieza y su evidencia).
+
+---
+
+## U8 (Unidad 8): Food Store en la feria
+
+La tablet trabaja sin señal: guarda un catálogo en SQLite, arma borradores y
+los somete a un semáforo contra una instantánea de PostgreSQL. **El móvil
+propone, el servidor dispone**: `SIMULADO_APROBADO` no es una venta y la tablet
+nunca cambia stock ni precios del servidor.
+
+### Orden para crear todo desde cero
+
+```powershell
+$env:PGPASSWORD = '<contraseña>'
+$psql = 'C:\Program Files\PostgreSQL\18\bin\psql.exe'
+
+# 1. Copia de trabajo (no tocar foodstore)
+# createdb -U postgres -T foodstore foodstore_u8
+
+# 2. Vista de instantánea y CSV (50.006 productos)
+& $psql -U postgres -d foodstore_u8 -f movil/v_snapshot_movil.sql
+& $psql -U postgres -d foodstore_u8 -f movil/exportar_snapshot.sql
+& $psql -U postgres -d foodstore_u8 -f movil/verificacion_servidor.sql
+```
+
+3. Abrir `movil/foodstore_movil.db` con **DB Browser for SQLite** (o `sqlite3`)
+   y ejecutar `movil/schema_sqlite.sql`.
+4. Importar `movil/servidor_snapshot.csv` en la tabla `snapshot_servidor`
+   (CSV, cabecera incluida, `--skip 1`).
+5. Ejecutar `movil/semaforo.sql`: normaliza `t/f`, actualiza `producto_cache` y
+   evalúa solo solicitudes `PENDIENTE`.
+6. Ejecutar `movil/pruebas_sqlite.sql` para C1, borrador con `COMMIT`,
+   `ROLLBACK` y C7. Los dos `INSERT` inválidos de C7 deben fallar y dejar 0
+   filas; no se corrige el error: se demuestra el rechazo.
+7. Para los casos C2–C6, repetir el ciclo: borrador → cambio en
+   `foodstore_u8` → nuevo CSV → importar → `semaforo.sql`.
+
+| Evidencia | Resultado |
+|---|---|
+| Snapshot | 50.006 productos, 2,96 MB, `fecha_copia` 2026-11-12 |
+| C1 / C7 | catálogo sin servidor; `COMMIT` deja 1 borrador, `ROLLBACK` 0; cantidad 0 y producto inexistente rechazados por `CHECK` y `FK` |
+| C2 | `CONFLICTO`; al aceptar el precio, nueva solicitud `SIMULADO_APROBADO` |
+| C3 | `RECHAZADO` por stock insuficiente (500 > 106) |
+| C4 | `RECHAZADO` por baja lógica; la fila de caché queda con `eliminado = 1` |
+| C5 | `SIMULADO_APROBADO` sin cambios |
+| C6 | UUID repetido → error de PK; repetir el semáforo no reevalúa |
+| PostgreSQL | pedidos 227.009 y stock total 4.989.376 sin cambios; solo baja lógica del producto 3 |
+| Code review | 4 hallazgos con decisión; índice `detalle_pedido(cantidad)` descartado por plan real |
+
+Entregables: `movil/schema_sqlite.sql`, `movil/pruebas_sqlite.sql`,
+`movil/semaforo.sql`, `movil/servidor_snapshot.csv`,
+`movil/foodstore_movil.db`, `docs/informe.pdf`, `docs/kiro/`,
+`docs/bitacora_ia.md` y `docs/DUIA.md`. Evidencias en `movil/evidencias/`.
+
+---
+
+## U6 (Unidad 6): Mantenimiento, respaldo y recuperación
+
+Laboratorio sobre `foodstore` (clon de `food_store_u5`, 161 MB) y restauración
+descartable en `foodstore_restore_test`. La base principal no se elimina.
+
+```powershell
+$env:PGPASSWORD = '<contraseña>'
+# ejecutar desde la raíz del repo
+.\U6\backup_foodstore.ps1
+& 'C:\Program Files\PostgreSQL\18\bin\psql.exe' -d foodstore -f U6\health_check.sql
+& 'C:\Program Files\PostgreSQL\18\bin\psql.exe' -d foodstore -f U6\maintenance.sql
+.\U6\restore_test.ps1
+```
+
+| Evidencia | Resultado |
+|---|---|
+| Respaldo `pg_dump -Fc` | 11,9 MB, 185 entradas, 6,26 s |
+| Health check | 161 MB, 1 conexión, cache hit 82,5 %, sin consultas activas |
+| Mantenimiento | `ANALYZE` 1,5 s; `categoria` pasó de `reltuples=-1` a 3; sin `VACUUM FULL` |
+| Restauración | RTO **8,89 s**, RPO observado **85,22 s**, conteos OK, inválidos 0 |
+| Hallazgo | El restore lógico no transfiere estadísticas (`categoria` sin `pg_statistic`) ni ACLs con `--no-owner --no-privileges`; agregar `ANALYZE` + roles/grants post-restore |
+
+Detalle, problema real y mejora: `U6/SPEC_U6.md`, `U6/informe_u6.pdf` y
+`U6/evidencias/`.
 
 ---
 

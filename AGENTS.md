@@ -1,18 +1,33 @@
 # AGENTS.md
 
 Repositorio del proyecto integrador **Food Store** (cátedra Base de Datos, UTN).
-Los scripts PostgreSQL sustentan los TP de integridad y concurrencia (TP2).
+Los scripts PostgreSQL sustentan los TP de integridad, concurrencia, seguridad y mantenimiento.
 
 ## Estructura
 
 - `schema.sql` — DDL definitivo (enums, 5 tablas, 3 índices; reglas R1–R7).
 - `seed.sql` — carga inicial (3 categorías, 6 productos, 3 clientes, 3 pedidos, 5 líneas).
 - `sql/restricciones.sql` — triggers de reglas de negocio evaluadas en TP2 Parte 1.
+- `sql/usuarios_base.sql`, `sql/roles.sql`, `sql/auditoria_test.sql`,
+  `sql/simulacro_incidente.sql`, `sql/usuario_anon.sql` — Unidad 5
+  (seguridad, auditoría, incidente y anonimización).
 - `TP6/` — Unidad 4 (entrega): `tp_fnbc_control_lote.sql` (FNBC),
   `tp_desnormalizacion_top_categorias.sql` (cubo con disparadores),
   `TP6_Food_Store.pdf` (informe) y `carga_dia_actual.sql`, que siembra el
   día corriente para que el `EXPLAIN ANALYZE` del reporte no mida un
   conjunto vacío. Los .sql también están en la raíz del repo.
+- `U6/` — Unidad 6 (entrega): `SPEC_U6.md`, `backup_foodstore.ps1`,
+  `health_check.sql`, `maintenance.sql`, `restore_test.ps1`, `informe_u6.pdf`
+  y `evidencias/`. `backups/` y `logs/` no se versionan.
+- `movil/` — Unidad 8 (entrega): `schema_sqlite.sql`, `pruebas_sqlite.sql`,
+  `semaforo.sql`, `v_snapshot_movil.sql`, `exportar_snapshot.sql`,
+  `verificacion_servidor.sql`, `servidor_snapshot.csv`,
+  `foodstore_movil.db` y `evidencias/`. La tablet nunca escribe en PostgreSQL;
+  precios en centavos (`INTEGER`), tablas `STRICT` y baja lógica local
+  (`eliminado = 1`) para no romper la FK del borrador.
+- `docs/kiro/` — Unidad 8: `requirements.md` (EARS), `design.md` y `tasks.md`.
+- `docs/informe.pdf`, `docs/informe_u8.md`, `docs/generar_informe_u8.py`,
+  `docs/bitacora_ia.md` y `docs/DUIA.md` — entrega U8.
 - `protocolo_seguridad.md` — protocolo copia / transacción / respaldo.
 - `docs/` — informes de laboratorio (concurrencia, lectura crítica) y DUIA.
 - `.kiro/` — steering docs compartidos con la herramienta Kiro.
@@ -32,6 +47,20 @@ $psql = 'C:\Program Files\PostgreSQL\18\bin\psql.exe'
 # copia / respaldo (ver protocolo_seguridad.md)
 createdb -T plantilla copia_trabajo
 pg_dump -U postgres copia_trabajo > respaldos/<fecha>.sql
+
+# U6: respaldo, health check, mantenimiento y simulacro
+& $psql -U postgres -h localhost -d foodstore -f U6/health_check.sql
+& $psql -U postgres -h localhost -d foodstore -f U6/maintenance.sql
+.\U6\backup_foodstore.ps1
+.\U6\restore_test.ps1
+
+# U8: instantánea para la tablet y verificación del servidor
+# createdb -U postgres -T foodstore foodstore_u8
+& $psql -U postgres -h localhost -d foodstore_u8 -f movil/v_snapshot_movil.sql
+& $psql -U postgres -h localhost -d foodstore_u8 -f movil/exportar_snapshot.sql
+& $psql -U postgres -h localhost -d foodstore_u8 -f movil/verificacion_servidor.sql
+# SQLite: ejecutar schema_sqlite.sql, importar servidor_snapshot.csv en
+# snapshot_servidor y ejecutar semaforo.sql (DB Browser o módulo sqlite3).
 ```
 
 ## Convenciones del esquema
