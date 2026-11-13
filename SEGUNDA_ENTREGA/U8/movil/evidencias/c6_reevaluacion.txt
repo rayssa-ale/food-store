@@ -1,0 +1,5 @@
+C6 - repeticion de la simulacion
+antes : ('SIMULADO_APROBADO', '2026-11-12T15:08:11.691Z')
+despues: ('SIMULADO_APROBADO', '2026-11-12T15:08:11.691Z')
+resultado: SIN CAMBIOS (no reevaluo)
+total solicitudes: 6

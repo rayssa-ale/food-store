@@ -1,0 +1,32 @@
+﻿2026-10-24 16:44:23.482 -03 [8684] @ from  LOG:  checkpoint completo: escritos 5 b�fers (0.0%); 0 archivos WAL a�adidos, 0 eliminados, 0 reciclados; write=0.343 s, sync=0.030 s, total=0.433 s; archivos sincronizados=4, m�s largo=0.026 s, promedio=0.008 s; distancia=4 kB, estimaci�n=49 kB; lsn=0/28621AC8, lsn de redo=0/28621A70
+2026-10-24 16:45:27.601 -03 [14396] [desconocido]@[desconocido] from 127.0.0.1 LOG:  conexi�n recibida: host=127.0.0.1 port=61890
+2026-10-24 16:45:27.605 -03 [14396] postgres@food_Store from 127.0.0.1 LOG:  conexi�n autenticada: usuario=�postgres� m�todo=trust (C:/Users/julic/OneDrive/Desktop/Nueva carpeta/data/pg_hba.conf:115)
+2026-10-24 16:45:27.605 -03 [14396] postgres@food_Store from 127.0.0.1 LOG:  conexi�n autorizada: usuario=postgres base_de_datos=food_Store nombre_de_aplicaci�n=psql
+2026-10-24 16:45:27.613 -03 [14396] postgres@food_Store from 127.0.0.1 LOG:  sentencia: SELECT 'INTENTO_FALLIDO_1' AS etapa, 'fn_autenticar inexistente en este esquema' AS resultado;
+2026-10-24 16:45:27.614 -03 [14396] postgres@food_Store from 127.0.0.1 LOG:  sentencia: SELECT 'INTENTO_FALLIDO_2' AS etapa, 'simulado via conexiones fallidas' AS resultado;
+2026-10-24 16:45:27.614 -03 [14396] postgres@food_Store from 127.0.0.1 LOG:  sentencia: SELECT 'INTENTO_FALLIDO_3' AS etapa, 'simulado via conexiones fallidas' AS resultado;
+2026-10-24 16:45:27.615 -03 [14396] postgres@food_Store from 127.0.0.1 LOG:  sentencia: SELECT 'INTENTO_EXITOSO_SIMULADO' AS etapa, current_user AS usuario_actual, current_database() AS base_actual;
+2026-10-24 16:45:27.615 -03 [14396] postgres@food_Store from 127.0.0.1 LOG:  sentencia: SELECT 'LECTURA_MASIVA_USUARIO' AS etapa, count(*) AS total_registros FROM usuario;
+2026-10-24 16:45:27.620 -03 [14396] postgres@food_Store from 127.0.0.1 LOG:  sentencia: SELECT 'LECTURA_MASIVA_USUARIO_DETALLE' AS etapa, id, nombre, apellido, mail FROM usuario ORDER BY id LIMIT 50;
+2026-10-24 16:45:27.621 -03 [14396] postgres@food_Store from 127.0.0.1 LOG:  sentencia: DO $$
+	BEGIN
+	  BEGIN
+	    EXECUTE 'GRANT admin_datos TO app_web';
+	    RAISE NOTICE 'ESCALAMIENTO_EXITOSO: GRANT admin_datos TO app_web ejecutado';
+	  EXCEPTION
+	    WHEN OTHERS THEN
+	      RAISE NOTICE 'ESCALAMIENTO_FALLIDO: %', SQLERRM;
+	  END;
+	END $$;
+2026-10-24 16:45:27.623 -03 [14396] postgres@food_Store from 127.0.0.1 LOG:  sentencia: DO $$
+	BEGIN
+	  BEGIN
+	    EXECUTE 'CREATE ROLE atacante_test NOLOGIN';
+	    RAISE NOTICE 'ESCALAMIENTO_EXITOSO: CREATE ROLE ejecutado';
+	    EXECUTE 'DROP ROLE atacante_test';
+	  EXCEPTION
+	    WHEN OTHERS THEN
+	      RAISE NOTICE 'ESCALAMIENTO_FALLIDO: %', SQLERRM;
+	  END;
+	END $$;
+2026-10-24 16:45:27.627 -03 [14396] postgres@food_Store from 127.0.0.1 LOG:  sentencia: SELECT 'SIMULACRO_FINALIZADO' AS etapa, now() AS timestamp;

@@ -1,0 +1,9 @@
+      metrica      |  valor  
+-------------------+---------
+ productos_activos | 50005
+ stock_total       | 4989376
+ productos         | 50006
+ pedidos           | 227009
+ detalle_pedido    | 549529
+(5 filas)
+

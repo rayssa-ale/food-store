@@ -1,0 +1,62 @@
+﻿opencode.exe : [0m
+En C:\Users\julic\AppData\Roaming\npm\opencode.ps1: 14 Carácter: 3
++   & "$basedir/node_modules/opencode-ai/bin/opencode.exe"   $args
++   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([0m:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+> build ┬À big-pickle
+[0m
+# Reconstrucci├│n cronol├│gica (solo con el fragmento)
+
+## L├¡nea de tiempo
+
+| Hora (-03) | Evento registrado | Lectura |
+|---|---|---|
+| 16:44:23.482 | Checkpoint completo, 5 b├║fers, lsn 0/28621AC8 | Actividad normal de fondo, ~64 s antes de la sesi├│n. No hay nada registrado en el intervalo. |
+| 16:45:27.601 | `conexi├│n recibida: host=192.168.0.100 port=XXXXX` desde `127.0.0.1`, usuario `[desconocido]` | Se abre una conexi├│n desde 192.168.0.100; el puerto fue anonimizado. |
+| 16:45:27.605 | `conexi├│n autenticada: usuario=postgres m├®todo=trust` (pg_hba.conf:115) | **No hubo verificaci├│n de credencial.** `trust` = acceso concedido sin contrase├▒a. |
+| 16:45:27.605 | `conexi├│n autorizada: postgres / food_store / psql` | Sesi├│n interactiva/CLI como **superusuario**. |
+| 16:45:27.613 | `SELECT 'INTENTO_FALLIDO_1' ... 'fn_autenticar inexistente en este esquema'` | No es un fallo de autenticaci├│n: es un `SELECT` que devuelve una etiqueta de texto. La funci├│n `fn_autenticar` no existir├¡a en el esquema. |
+| 16:45:27.614 | `INTENTO_FALLIDO_2` ÔÇö `'simulado via conexiones fallidas'` | Igual: sentencia etiquetada, no intento real. |
+| 16:45:27.614 | `INTENTO_FALLIDO_3` ÔÇö misma etiqueta | Igual. |
+| 16:45:27.615 | `INTENTO_EXITOSO_SIMULADO`, `current_user`, `current_database()` | La sesi├│n ya estaba autenticada; "├®xito" es una etiqueta dentro del SQL. |
+| 16:45:27.615 | `LECTURA_MASIVA_USUARIO`: `count(*) FROM usuario` | Lectura de metadatos de la tabla de usuarios. |
+| 16:45:27.620 | `LECTURA_MASIVA_USUARIO_DETALLE`: `id, 'NOMBRE_ANON','APELLIDO_ANON','MAIL_ANON' ... LIMIT 50` | Lectura acotada a 50 filas, con valores ya enmascarados en el propio texto de la sentencia. |
+| 16:45:27.621 | Bloque `DO` con `GRANT ROL_ANON_01 TO ROL_ANON_02` envuelto en `EXCEPTION WHEN OTHERS` | Intento nominal de escalamiento de privilegios. |
+| 16:45:27.623 | Bloque `DO` con `CREATE ROLE ROL_ANON_03 NOLOGIN` y luego `DROP ROLE ROL_ANON_03`, con manejo de excepci├│n | Intento de creaci├│n de rol y limpieza inmediata. |
+| 16:45:27.627 | `SIMULACRO_FINALIZADO`, `now()` | Cierre expl├¡cito y etiquetado del ejercicio. |
+
+**Duraci├│n total de la "intrusi├│n": 26 milisegundos** (27.601 ÔåÆ 27.627).
+
+## Actores identificados
+
+- **Cliente**: `192.168.0.100`, puerto redactado. Las l├¡neas de sesi├│n dicen `from 127.0.0.1` (discrepancia que discuto abajo).
+- **Sesi├│n**: usuario `postgres` (superusuario), base `food_store` (aparece tambi├®n como `food_Store`), aplicaci├│n `psql`.
+- **Roles nombrados pero no usados como sesi├│n**: `ROL_ANON_01`, `ROL_ANON_02`, `ROL_ANON_03`.
+- **PID** anonimizado (`PID_ANON`).
+
+## Lo que el log NO muestra
+
+- No hay ning├║n `FATAL`, `authentication failed` ni `password authentication failed`: los tres "intentos fallidos" son `SELECT` con etiqueta, no autenticaciones.
+- No se ven los `NOTICE` de los bloques `DO` (por defecto PostgreSQL no los escribe en el log), as├¡ que **se desconoce si el `GRANT` y el `CREATE ROLE` tuvieron ├®xito o fallaron**.
+- No se registran resultados: ni el `count(*)` real, ni las filas devueltas.
+- No hay `COPY`, `pg_dump`, ni ninguna sentencia que implique extracci├│n masiva de datos.
+- No hay `SET ROLE`: la sesi├│n nunca abandon├│ `postgres`.
+
+## Hip├│tesis razonadas de contenci├│n
+
+1. **La autenticaci├│n no fue un control efectivo.** `m├®todo=trust` en `pg_hba.conf:115` permiti├│ entrar como `postgres` sin credencial. Cualquier cliente que alcance esa direcci├│n obtiene superusuario. Es la falla de contenci├│n m├ís fuerte del fragmento. (Base: l├¡neas 3ÔÇô4.)
+2. **Los "3 intentos fallidos + 1 exitoso" son narrativa del ejercicio, no del servidor.** Fueron sentencias `SELECT` que devuelven etiquetas, incluida una que declara que la simulaci├│n se hizo "v├¡a conexiones fallidas" que no aparecen en el log. (Base: l├¡neas 5ÔÇô8.)
+3. **El "escalamiento" se ejecut├│ desde una sesi├│n que ya era superusuario.** Un `GRANT` o `CREATE ROLE` hecho por `postgres` no demuestra nada sobre la resistencia de un rol de menor privilegio: el actor ya estaba por encima de cualquier barrera. El ejercicio etiqueta como escalamiento algo que, seg├║n el log, no cruz├│ ning├║n l├¡mite real. (Base: l├¡nea 4 vs. 11ÔÇô12.)
+4. **El manejo de excepciones reduce la observabilidad.** Ambos bloques `DO` atrapan `WHEN OTHERS` y emiten solo `RAISE NOTICE`; sin esos NOTICE en el log, un fallo y un ├®xito son indistinguibles en el fragmento. Es una decisi├│n que oculta el resultado a la auditor├¡a. (Base: l├¡neas 11ÔÇô20, 21ÔÇô31.)
+5. **Posible persistencia residual.** El `DROP ROLE ROL_ANON_03` limpia el rol creado, pero **no hay `REVOKE` de la membres├¡a** otorgada en el primer bloque. Si el `GRANT` prosper├│, la pertenencia a `ROL_ANON_01` quedar├¡a vigente al cierre. Solo es hip├│tesis: no se ve el resultado. (Base: l├¡neas 11ÔÇô20.)
+6. **Volumen de datos acotado y enmascarado en origen.** La lectura se limita a `count(*)` + `LIMIT 50`, y los valores aparecen como literales `'NOMBRE_ANON'`, `'APELLIDO_ANON'`, `'MAIL_ANON'`. El log no expone PII. (Base: l├¡neas 9ÔÇô10.)
+7. **Automatizaci├│n, no interacci├│n humana.** 26 ms entre la conexi├│n y el cierre, con sentencias encadenadas y etiquetas de etapa, sugieren un script de simulacro. (Base: timestamps.)
+8. **Discrepancia de origen.** `host=192.168.0.100` en la conexi├│n recibida frente a `from 127.0.0.1` en las l├¡neas de sesi├│n: compatible con un proxy/reenviador de puertos en loopback, o con prefijos de log distintos; el fragmento no permite decidir. (Base: l├¡neas 2ÔÇô3.)
+9. **Entorno no endurecido.** La ruta de `pg_hba.conf` apunta a una carpeta personal de OneDrive, lo que sugiere una instancia local/de desarrollo m├ís que un servidor productivo. Es inferencia por la ruta, no una afirmaci├│n del log. (Base: l├¡nea 3.)
+
+## Conclusi├│n
+
+El fragmento describe un **simulacro scripteado de 26 ms**, etiquetado como tal por sus propias sentencias (`SIMULACRO_FINALIZADO`), ejecutado por `psql` como superusuario `postgres` sobre `food_store` tras una conexi├│n `trust` desde 192.168.0.100. Las etapas registradas son: entrada sin credencial ÔåÆ lecturas acotadas con datos enmascarados ÔåÆ dos intentos nominales de escalamiento ÔåÆ limpieza parcial y cierre. Lo que el log prueba es la **debilidad de `trust` y la falta de trazabilidad de los resultados**; lo que no prueba es que hubiera habido autenticaciones fallidas reales, escalamiento efectivo ni exfiltraci├│n de datos.
+

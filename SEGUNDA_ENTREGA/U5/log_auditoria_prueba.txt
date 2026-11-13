@@ -1,0 +1,13 @@
+2026-10-24 15:17:58.287 -03 [24792] [desconocido]@[desconocido] from 127.0.0.1 LOG:  conexión recibida: host=127.0.0.1 port=53208
+2026-10-24 15:17:58.289 -03 [24792] postgres@foodstore_test from 127.0.0.1 LOG:  conexión autenticada: usuario=«postgres» método=trust (C:/Users/julic/OneDrive/Desktop/Nueva carpeta/data/pg_hba.conf:115)
+2026-10-24 15:17:58.289 -03 [24792] postgres@foodstore_test from 127.0.0.1 LOG:  conexión autorizada: usuario=postgres base_de_datos=foodstore_test nombre_de_aplicación=psql
+2026-10-24 15:17:58.291 -03 [24792] postgres@foodstore_test from 127.0.0.1 LOG:  sentencia: SELECT now() AS inicio_prueba;
+2026-10-24 15:17:58.292 -03 [24792] postgres@foodstore_test from 127.0.0.1 LOG:  sentencia: SELECT count(*) AS total_productos FROM producto;
+2026-10-24 15:17:58.297 -03 [24792] postgres@foodstore_test from 127.0.0.1 LOG:  sentencia: INSERT INTO categoria (nombre, descripcion) VALUES ('Auditoria TP5 Parte B', 'Registro de prueba para auditoria nativa') RETURNING id, nombre, eliminado;
+2026-10-24 15:17:58.305 -03 [24792] postgres@foodstore_test from 127.0.0.1 LOG:  sentencia: UPDATE categoria SET descripcion = 'Registro actualizado en prueba de auditoria' WHERE nombre = 'Auditoria TP5 Parte B' RETURNING id, descripcion;
+2026-10-24 15:17:58.307 -03 [24792] postgres@foodstore_test from 127.0.0.1 LOG:  sentencia: SELECT now() AS fin_prueba;
+2026-10-24 15:17:58.308 -03 [24792] postgres@foodstore_test from 127.0.0.1 LOG:  desconexiÃ³n: duraciÃ³n de sesiÃ³n: 0:00:00.028 usuario=postgres base=foodstore_test host=127.0.0.1 port=53208
+2026-10-24 15:18:10.433 -03 [5360] [desconocido]@[desconocido] from 127.0.0.1 LOG:  conexión recibida: host=127.0.0.1 port=53209
+2026-10-24 15:18:20.878 -03 [1180] [desconocido]@[desconocido] from 127.0.0.1 LOG:  conexión recibida: host=127.0.0.1 port=53210
+2026-10-24 15:18:20.888 -03 [1180] postgres@foodstore_test from 127.0.0.1 FATAL:  la autentificación password falló para el usuario «postgres»
+2026-10-24 15:18:20.888 -03 [1180] postgres@foodstore_test from 127.0.0.1 DETALLE:  La conexión coincidió con el archivo «C:/Users/julic/OneDrive/Desktop/Nueva carpeta/data/pg_hba.conf» línea 115: «host    all             all             127.0.0.1/32            scram-sha-256»

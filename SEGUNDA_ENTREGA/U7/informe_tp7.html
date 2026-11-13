@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>TP Unidad 7: NoSQL y Nuevas Formas de Almacenamiento – Food Store</title>
+<style>
+  @page {
+    size: A4 portrait;
+    margin: 0.9cm 1.1cm;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: #1a202c;
+    background-color: #ffffff;
+    line-height: 1.32;
+    font-size: 8.6pt;
+    margin: 0;
+    padding: 0;
+  }
+  .header-box {
+    border-bottom: 2px solid #2b6cb0;
+    padding-bottom: 4px;
+    margin-bottom: 6px;
+  }
+  .university-title {
+    font-size: 7.5pt;
+    font-weight: 700;
+    color: #4a5568;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 2px;
+  }
+  h1 {
+    font-size: 12.5pt;
+    color: #1a365d;
+    margin: 0 0 2px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.2px;
+  }
+  .subtitle {
+    font-size: 9pt;
+    color: #2b6cb0;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .metadata {
+    font-size: 7.8pt;
+    color: #4a5568;
+    background-color: #f7fafc;
+    border-left: 3px solid #3182ce;
+    padding: 4px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-bottom: 6px;
+  }
+  .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .metadata strong {
+    color: #2d3748;
+  }
+  .metadata a {
+    color: #2b6cb0;
+    text-decoration: none;
+  }
+  h2 {
+    font-size: 10pt;
+    color: #2c5282;
+    margin-top: 8px;
+    margin-bottom: 3px;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 2px;
+    page-break-after: avoid;
+  }
+  h3 {
+    font-size: 8.6pt;
+    color: #2d3748;
+    margin-top: 5px;
+    margin-bottom: 2px;
+    page-break-after: avoid;
+  }
+  p {
+    margin-top: 2px;
+    margin-bottom: 4px;
+    text-align: justify;
+  }
+  ul, ol {
+    margin-top: 2px;
+    margin-bottom: 4px;
+    padding-left: 15px;
+  }
+  li {
+    margin-bottom: 2px;
+  }
+  .code-block {
+    background-color: #1e1e1e;
+    color: #d4d4d4;
+    border-radius: 4px;
+    padding: 5px 7px;
+    font-family: "Cascadia Code", Consolas, "Courier New", monospace;
+    font-size: 7.2pt;
+    line-height: 1.22;
+    margin: 3px 0;
+    overflow-x: auto;
+    page-break-inside: avoid;
+  }
+  .code-keyword { color: #569cd6; font-weight: bold; }
+  .code-string { color: #ce9178; }
+  .code-number { color: #b5cea8; }
+  .code-comment { color: #6a9955; font-style: italic; }
+  .code-prop { color: #9cdcfe; }
+  
+  table.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 5px 0;
+    font-size: 7.8pt;
+    page-break-inside: avoid;
+  }
+  table.data-table th, table.data-table td {
+    border: 1px solid #cbd5e0;
+    padding: 4px 6px;
+    text-align: left;
+  }
+  table.data-table th {
+    background-color: #ebf8ff;
+    color: #2b6cb0;
+    font-weight: 700;
+  }
+  table.data-table tr:nth-child(even) {
+    background-color: #f7fafc;
+  }
+  .text-center { text-align: center; }
+  .badge-success {
+    display: inline-block;
+    padding: 1px 5px;
+    font-size: 6.8pt;
+    font-weight: 700;
+    color: #22543d;
+    background-color: #c6f6d5;
+    border-radius: 3px;
+  }
+  
+  .card-box {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-left: 3px solid #3182ce;
+    border-radius: 4px;
+    padding: 5px 7px;
+    margin: 4px 0;
+    page-break-inside: avoid;
+  }
+  .card-contrast {
+    background: #fffaf0;
+    border: 1px solid #feebc8;
+    border-left: 3px solid #dd6b20;
+    border-radius: 4px;
+    padding: 5px 7px;
+    margin: 5px 0;
+    page-break-inside: avoid;
+  }
+  .card-conclusion {
+    background: #f0fff4;
+    border: 1px solid #c6f6d5;
+    border-left: 4px solid #38a169;
+    border-radius: 4px;
+    padding: 7px 9px;
+    margin: 6px 0;
+    page-break-inside: avoid;
+  }
+  .conclusion-title {
+    font-weight: 700;
+    color: #22543d;
+    margin-bottom: 2px;
+    font-size: 9.2pt;
+  }
+  .page-break {
+    page-break-after: always;
+  }
+</style>
+</head>
+<body>
+
+<!-- ========================================== -->
+<!-- PÁGINA 1: ENCABEZADO Y PARTE 1 (MODELO)    -->
+<!-- ========================================== -->
+<div class="header-box">
+  <div class="university-title">UTN FRM · Tecnicatura Universitaria en Programación · Bases de Datos II</div>
+  <h1>Trabajo Práctico · Unidad 7: NoSQL y Nuevas Formas de Almacenamiento</h1>
+  <div class="subtitle">Modelado Documental, Migración y Verificación Cruzada: PostgreSQL vs. MongoDB en Food Store</div>
+</div>
+
+<div class="metadata">
+  <div class="meta-row">
+    <span><strong>Materia:</strong> Bases de Datos II</span>
+    <span><strong>Proyecto:</strong> Food Store</span>
+    <span><strong>Entorno:</strong> PostgreSQL 18 + MongoDB 7.0/8.0 (mongosh)</span>
+    <span><strong>Fecha:</strong> Noviembre 2026</span>
+  </div>
+  <div class="meta-row">
+    <span><strong>Integrantes del Equipo:</strong> Ivana Gutierrez · Rayssa Alejo · Julieta Chavez · Brisa Muñoz</span>
+  </div>
+  <div class="meta-row">
+    <span><strong>Repositorio GitHub:</strong> <a href="https://github.com/rayssa-ale/food-store">https://github.com/rayssa-ale/food-store</a></span>
+    <span><strong>Rama / Entrega:</strong> <code>tp7-ivana</code> (o <code>main</code>)</span>
+  </div>
+</div>
+
+<h2>1. Introducción y Alcance del Trabajo</h2>
+<p>
+  El presente trabajo implementa la transición de un subconjunto transaccional crítico del sistema <strong>Food Store</strong> desde un esquema relacional normalizado (PostgreSQL) hacia una base de datos orientada a documentos (<strong>MongoDB</strong>). Se evalúa el impacto de la desnormalización mediante <strong>Embedding</strong> de cabeceras, líneas de detalle y clientes, garantizando la paridad estricta de consultas y contrastando las recomendaciones generadas por herramientas de Inteligencia Artificial frente a la documentación técnica oficial de ambos paradigmas.
+</p>
+
+<h2>2. Parte 1 · Modelo Documental y Migración (Consignas 1 a 3)</h2>
+
+<h3>2.1 Mapeo Relacional a Documental (Consigna 1)</h3>
+<p>
+  En PostgreSQL, el circuito de ventas está articulado por cuatro tablas normalizadas con claves primarias y foráneas:
+  <strong><code>pedido</code></strong> (PK <code>id</code>, FK <code>usuario_id</code>), 
+  <strong><code>detalle_pedido</code></strong> (PK <code>id</code>, FK <code>pedido_id</code>, FK <code>producto_id</code>, restricción <code>UNIQUE(pedido_id, producto_id)</code>), 
+  <strong><code>usuario</code></strong> (PK <code>id</code>) y 
+  <strong><code>producto</code></strong> (PK <code>id</code>, FK <code>categoria_id</code>).
+</p>
+<p>
+  En MongoDB, para priorizar la <strong>localidad de datos</strong> (<em>Data Locality</em>) y responder a la alta frecuencia de lectura del pedido completo en una única operación de entrada/salida, se diseñó la colección <strong><code>pedidos</code></strong> aplicando incrustación:
+</p>
+
+<div class="code-block">
+<span class="code-comment">// Esquema Documental propuesto para la colección 'pedidos'</span>
+{
+  <span class="code-prop">"_id"</span>: <span class="code-string">ObjectId("673f8a1b2c4e8a1d00000001")</span>,
+  <span class="code-prop">"pedido_id"</span>: <span class="code-number">1</span>,                    <span class="code-comment">// Identificador relacional original de PostgreSQL</span>
+  <span class="code-prop">"fecha"</span>: <span class="code-keyword">ISODate</span>(<span class="code-string">"2026-06-05T20:30:00Z"</span>),
+  <span class="code-prop">"estado"</span>: <span class="code-string">"CONFIRMADO"</span>,           <span class="code-comment">// PENDIENTE | CONFIRMADO | TERMINADO | CANCELADO</span>
+  <span class="code-prop">"forma_pago"</span>: <span class="code-string">"EFECTIVO"</span>,
+  <span class="code-prop">"cliente"</span>: {                       <span class="code-comment">// Objeto embebido con snapshot de datos esenciales</span>
+    <span class="code-prop">"cliente_id"</span>: <span class="code-number">2</span>,
+    <span class="code-prop">"nombre"</span>: <span class="code-string">"Juan"</span>, <span class="code-prop">"apellido"</span>: <span class="code-string">"Pérez"</span>,
+    <span class="code-prop">"email"</span>: <span class="code-string">"juan@x.com"</span>, <span class="code-prop">"telefono"</span>: <span class="code-string">"2611234567"</span>
+  },
+  <span class="code-prop">"lineas"</span>: [                        <span class="code-comment">// Arreglo embebido de ítems (congelamiento de precio histórico)</span>
+    {
+      <span class="code-prop">"producto_id"</span>: <span class="code-number">1</span>, <span class="code-prop">"nombre"</span>: <span class="code-string">"Muzzarella"</span>, <span class="code-prop">"categoria"</span>: <span class="code-string">"Pizzas"</span>,
+      <span class="code-prop">"cantidad"</span>: <span class="code-number">2</span>, <span class="code-prop">"precio_unitario"</span>: <span class="code-number">3200.00</span>, <span class="code-prop">"subtotal"</span>: <span class="code-number">6400.00</span>
+    },
+    {
+      <span class="code-prop">"producto_id"</span>: <span class="code-number">7</span>, <span class="code-prop">"nombre"</span>: <span class="code-string">"Coca-Cola 500ml"</span>, <span class="code-prop">"categoria"</span>: <span class="code-string">"Bebidas"</span>,
+      <span class="code-prop">"cantidad"</span>: <span class="code-number">3</span>, <span class="code-prop">"precio_unitario"</span>: <span class="code-number">900.00</span>, <span class="code-prop">"subtotal"</span>: <span class="code-number">2700.00</span>
+    }
+  ],
+  <span class="code-prop">"total"</span>: <span class="code-number">9100.00</span>                   <span class="code-comment">// Coherencia matemática sum(subtotales) == total</span>
+}
+</div>
+
+<h3>2.2 Migración de Datos (Consigna 2)</h3>
+<p>
+  Se elaboró el script <code>migracion_mongodb.js</code> ejecutando <code>insertMany()</code> con los 10 pedidos del seed representativo de Food Store. Cada documento respeta los identificadores de origen (<code>pedido_id</code>, <code>cliente_id</code>, <code>producto_id</code>), congelando las cantidades, precios de lista históricos e importes consolidados (abarcando estados <em>CONFIRMADO, TERMINADO</em> y <em>CANCELADO</em>). Se definieron índices B-Tree sobre <code>pedido_id</code> (único), <code>estado</code>, <code>total</code> y un índice multikey sobre <code>lineas.producto_id</code>.
+</p>
+
+<h3>2.3 Integridad y Justificación Técnica de Embedding (Consigna 3)</h3>
+<div class="card-box">
+  <strong>Reglas de Integridad Conservadas Durante la Migración:</strong>
+  <ul>
+    <li><strong>Regla 1 (Coherencia Matemática y Congelamiento Histórico):</strong> En cada subdocumento de línea se satisface <code>subtotal == cantidad * precio_unitario</code> y en la raíz <code>total == sum(lineas.subtotal)</code>. El <code>precio_unitario</code> es inmutable: captura el valor pactado al facturar, desacoplándose de posteriores modificaciones en el catálogo maestro de precios.</li>
+    <li><strong>Regla 2 (Cardinalidad Mínima y Unicidad de Renglón):</strong> Todo pedido contiene al menos una línea (<code>minItems: 1</code>), con <code>cantidad > 0</code>. Se preserva la invariante relacional <code>UNIQUE(pedido_id, producto_id)</code> agrupando cantidades para evitar líneas duplicadas de un mismo artículo.</li>
+  </ul>
+</div>
+
+<p>
+  <strong>Fundamentación de Documentos Embebidos vs. Referencias:</strong>  
+  Se embeben las <em>líneas de pedido</em> y el <em>cliente esencial</em> porque constituyen el núcleo atómico del pedido (<em>Aggregate Root</em>). El acceso al pedido casi invariablemente requiere conocer qué se consumió y a quién entregarlo. Embeber garantiza lectura de latencia ultra baja en un solo round-trip sin operaciones de <code>JOIN</code> ni <code>$lookup</code>, y provee <strong>atomicidad transaccional a nivel de documento único</strong> (sin el overhead de coordinadores distribuidos).  
+  Por el contrario, <strong>no se embebe el catálogo de productos ni la tabla completa de usuarios</strong>: son entidades maestras con alta tasa de mutación independiente (actualización masiva de precios, stock, contraseñas o roles) que si estuvieran desnormalizadas provocarían anomalías de redundancia y actualización masiva.
+</p>
+
+<div class="page-break"></div>
+
+<!-- ========================================== -->
+<!-- PÁGINA 2: PARTE 2 (CONSULTAS Y COMPARACIÓN)-->
+<!-- ========================================== -->
+<h2>3. Parte 2 · Consultas y Verificación Cruzada (Consignas 4 y 5)</h2>
+
+<h3>3.1 Consultas Ejecutadas en MongoDB (<code>consultas_mongodb.js</code>)</h3>
+<ul>
+  <li>
+    <strong>4.a) Todos los pedidos con identificador y estado:</strong>
+    <div class="code-block">db.pedidos.find({}, { _id: 1, pedido_id: 1, estado: 1, total: 1 }).sort({ pedido_id: 1 });</div>
+    <em>Resultado:</em> Retorna los 10 pedidos con su ID relacional, ObjectId de MongoDB, estado y total.
+  </li>
+  <li>
+    <strong>4.b) Filtro por estado existente ('TERMINADO'):</strong>
+    <div class="code-block">db.pedidos.find({ estado: "TERMINADO" }, { _id: 0, pedido_id: 1, estado: 1, total: 1, "cliente.nombre": 1 });</div>
+    <em>Resultado:</em> Recupera 7 pedidos (IDs: <code>2, 3, 4, 6, 7, 9, 10</code>).
+  </li>
+  <li>
+    <strong>4.c) Búsqueda por producto dentro del arreglo embebido (producto_id = 1, 'Muzzarella'):</strong>
+    <div class="code-block">db.pedidos.find({ "lineas.producto_id": 1 }, { _id: 0, pedido_id: 1, estado: 1, total: 1 });</div>
+    <em>Resultado:</em> Recupera 4 pedidos (IDs: <code>1, 4, 7, 10</code>). MongoDB resuelve el filtro de forma nativa mediante su índice multikey sin necesidad de desenrollar el array (<code>$unwind</code>).
+  </li>
+  <li>
+    <strong>4.d) Filtro por total superior a un umbral justificado ($gt: 8000.00):</strong>
+    <div class="code-block">db.pedidos.find({ total: { $gt: 8000.00 } }, { _id: 0, pedido_id: 1, total: 1, estado: 1 });</div>
+    <em>Justificación del Umbral ($8.000,00):</em> En el dataset de Food Store, los pedidos presentan una media de $9.880 y una mediana de $8.050 (rango entre $2.800 y $24.100). El umbral de $8.000 discrimina con precisión analítica los pedidos individuales de bajo costo (empanadas/bebidas sueltas) de los pedidos familiares o grupales (múltiples pizzas/combos), aislando los 5 pedidos de mayor contribución a la facturación (IDs: <code>10, 9, 4, 7, 1</code>).
+  </li>
+</ul>
+
+<h3>3.2 Consultas Equivalentes en PostgreSQL (<code>consultas_postgresql.sql</code>)</h3>
+<div class="code-block">
+<span class="code-comment">-- Consulta 5.b: Equivalente a 4.b (Filtrar pedidos en estado 'TERMINADO')</span>
+<span class="code-keyword">SELECT</span> p.id <span class="code-keyword">AS</span> pedido_id, p.fecha, p.estado, u.nombre || <span class="code-string">' '</span> || u.apellido <span class="code-keyword">AS</span> cliente, p.total
+<span class="code-keyword">FROM</span> pedido p
+<span class="code-keyword">JOIN</span> usuario u <span class="code-keyword">ON</span> p.usuario_id = u.id
+<span class="code-keyword">WHERE</span> p.estado = <span class="code-string">'TERMINADO'</span>
+<span class="code-keyword">ORDER BY</span> p.id <span class="code-keyword">ASC</span>;
+
+<span class="code-comment">-- Consulta 5.c: Equivalente a 4.c (Pedidos con producto_id = 1 mediante JOIN y DISTINCT)</span>
+<span class="code-keyword">SELECT DISTINCT</span> p.id <span class="code-keyword">AS</span> pedido_id, p.fecha, p.estado, p.total
+<span class="code-keyword">FROM</span> pedido p
+<span class="code-keyword">JOIN</span> detalle_pedido dp <span class="code-keyword">ON</span> p.id = dp.pedido_id
+<span class="code-keyword">WHERE</span> dp.producto_id = <span class="code-number">1</span>
+<span class="code-keyword">ORDER BY</span> p.id <span class="code-keyword">ASC</span>;
+</div>
+
+<h3>3.3 Matriz de Verificación y Comparación Cruzada (Consigna 5)</h3>
+<table class="data-table">
+  <thead>
+    <tr>
+      <th>Consulta Evaluada</th>
+      <th class="text-center">Cantidad en PostgreSQL</th>
+      <th class="text-center">Cantidad en MongoDB</th>
+      <th class="text-center">Coinciden los IDs</th>
+      <th>Detalle de Identificadores Recuperados</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Estado seleccionado ('TERMINADO')</strong></td>
+      <td class="text-center"><strong>7</strong></td>
+      <td class="text-center"><strong>7</strong></td>
+      <td class="text-center"><span class="badge-success">SÍ (100%)</span></td>
+      <td>IDs: <code>[2, 3, 4, 6, 7, 9, 10]</code></td>
+    </tr>
+    <tr>
+      <td><strong>Producto seleccionado (producto_id = 1)</strong></td>
+      <td class="text-center"><strong>4</strong></td>
+      <td class="text-center"><strong>4</strong></td>
+      <td class="text-center"><span class="badge-success">SÍ (100%)</span></td>
+      <td>IDs: <code>[1, 4, 7, 10]</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<p>
+  <strong>Explicación Técnica de Paridad y Diferencias de Mecanismo:</strong>  
+  Se comprobó la paridad total en cantidad e identificadores. Sin embargo, los motores operan de manera conceptualmente distinta:  
+  En <strong>PostgreSQL</strong>, recuperar los pedidos del producto 1 requiere una operación de reunión relacional (<code>Hash Join</code> o <code>Nested Loop</code>) entre dos tablas físicas (<code>pedido</code> y <code>detalle_pedido</code>), demandando la cláusula <code>DISTINCT</code> (o un subquery con <code>EXISTS</code>) para que la cabecera no se repita si hubiera duplicaciones lógicas.  
+  En <strong>MongoDB</strong>, la consulta <code>db.pedidos.find({ "lineas.producto_id": 1 })</code> navega directamente sobre el arreglo contenido en el propio documento. Al evaluar la condición multikey, devuelve el documento raíz sin necesidad de uniones externas, deduplicaciones ni consumo extra de memoria para tablas temporales.
+</p>
+
+<div class="page-break"></div>
+
+<!-- ========================================== -->
+<!-- PÁGINA 3: PARTE 3 (EVALUACIÓN E IA)        -->
+<!-- ========================================== -->
+<h2>4. Parte 3 · Evaluación Tecnológica y Contraste con IA (Consignas 6 y 7)</h2>
+
+<h3>4.1 Consulta planteada a la Inteligencia Artificial (Consigna 6)</h3>
+<div class="card-box">
+  <em>«En Food Store disponemos de PostgreSQL con tablas normalizadas (pedido, detalle_pedido, cliente, producto). El patrón dominante es la lectura de pedidos cerrados con sus líneas completas, requiriendo estricta consistencia de precios y stock bajo alto volumen. ¿Conviene migrar pedidos a MongoDB aplicando Embedding?»</em>
+</div>
+<p>
+  <strong>Resumen de la propuesta de la IA:</strong> La IA recomendó la migración completa a MongoDB afirmando que: <em>(1) la eliminación de JOINs hace que las consultas sean siempre más rápidas que en PostgreSQL, y (2) el embedding soluciona la concurrencia y la consistencia sin necesidad de transacciones complejas gracias a la atomicidad del documento.</em>
+</p>
+
+<h3>4.2 Contraste Crítico contra Documentación Oficial y Evidencia de Laboratorio (Consigna 7)</h3>
+
+<div class="card-contrast">
+  <strong>Afirmación 1 de la IA:</strong> <em>«MongoDB siempre rinde mejor que PostgreSQL para consultar pedidos porque los JOINs relacionales degradan severamente el rendimiento.»</em><br>
+  <strong>Contraste Técnico y Documentación Oficial:</strong>
+  <p>
+    La afirmación es una <strong>generalización engañosa</strong>. La documentación oficial de MongoDB (<em>Data Model Design: Embedded vs. References</em>) estipula que el embedding beneficia la lectura de documentos puntuales agrupados en una misma página de disco (*Data Locality*). No obstante, para consultas analíticas agregadas (ventas mensuales, ranking de productos, proyecciones parciales), el documento embebido fuerza a transferir metadatos y campos redundantes desde el almacenamiento a la memoria RAM.  
+    En contrapartida, las mediciones en PostgreSQL con índices B-Tree (<code>idx_detalle_pedido_pedido</code>, <code>idx_pedido_usuario</code>) resuelven la reunión relacional en sub-milisegundos (&lt; 1 ms) utilizando <code>Merge Join</code> o <code>Index Only Scan</code>, manteniendo un <em>buffer pool</em> de memoria significativamente más eficiente gracias a la normalización. Por ende, la superioridad de MongoDB no es absoluta, sino estrictamente acotada a lecturas del agregado completo por clave.
+  </p>
+</div>
+
+<div class="card-contrast">
+  <strong>Afirmación 2 de la IA:</strong> <em>«En MongoDB no es necesario preocuparse por la integridad del stock o precios históricos porque las operaciones sobre el documento embebido son atómicas.»</em><br>
+  <strong>Contraste Técnico y Documentación Oficial:</strong>
+  <p>
+    La IA confunde <strong>atomicidad de documento único</strong> (<em>single-document atomicity</em>) con <strong>consistencia transaccional de negocio multi-documento</strong>. La documentación oficial de MongoDB (<em>Transactions & Atomicity</em>) advierte que las garantías ACID nativas libres de sobrecosto aplican <em>únicamente sobre un documento individual</em>.  
+    En Food Store, la creación de un pedido exige: (a) insertar el pedido, (b) decrementar el stock en la colección/tabla <code>producto</code>, y (c) validar disponibilidad. En MongoDB, garantizar esto sin condiciones de carrera exige transacciones multi-documento (<code>session.startTransaction()</code>), las cuales introducen penalizaciones de latencia y coordinación distribuida similares a las de un motor RDBMS. En contraste, PostgreSQL resuelve esto de forma nativa e inquebrantable mediante restricciones de catálogo (<code>FOREIGN KEY</code>, <code>CHECK (stock >= 0)</code>) y transacciones ACID nativas, impidiendo inconsistencias que en MongoDB recaerían en validaciones defensivas del código de aplicación.
+  </p>
+</div>
+
+<h2>5. Conclusión Técnica y Dictamen de Arquitectura (Consigna 7)</h2>
+<div class="card-conclusion">
+  <div class="conclusion-title">Dictamen Fundamentado (Máx. 200 palabras · Recuento actual: 172 palabras):</div>
+  <p>
+    Se desaconseja migrar el núcleo transaccional de Food Store exclusivamente a MongoDB; se recomienda implementar una <strong>arquitectura híbrida (Persistencia Políglota)</strong> sustentada en dos criterios técnicos concluyentes:
+  </p>
+  <ol>
+    <li>
+      <strong>Integridad Transaccional y Consistencia Operativa:</strong> La emisión de pedidos demanda consistencia ACID inmediata entre la facturación y el descuento de inventario. PostgreSQL garantiza integridad estructural mediante restricciones nativas en el motor (<code>CHECK (stock >= 0)</code>, claves foráneas e índices únicos), previniendo ventas sin stock o datos corruptos sin sobrecosto de coordinación distribuida.
+    </li>
+    <li>
+      <strong>Localidad de Lectura y Desacoplamiento de Carga:</strong> Para la visualización de comandas en cocina, trazabilidad del repartidor y consulta histórica del cliente, el modelo documental con <em>Embedding</em> en MongoDB es ampliamente superior, al recuperar el grafo íntegro del pedido en un único acceso a disco sin <code>JOINs</code>.
+    </li>
+  </ol>
+  <p>
+    Por tanto, el diseño óptimo conserva a <strong>PostgreSQL como Fuente Única de Verdad (SoT) transaccional</strong>, sincronizando asincrónicamente mediante eventos los pedidos finalizados hacia <strong>MongoDB como almacén de lectura de alto rendimiento</strong>.
+  </p>
+</div>
+
+<h2>6. Referencias Técnicas Consultadas</h2>
+<ol style="font-size: 7.5pt; color: #4a5568; margin-bottom: 0;">
+  <li>MongoDB Inc. <em>Data Model Design: Embedded vs. References</em>. <a href="https://www.mongodb.com/docs/manual/core/data-model-design/">mongodb.com/docs/manual/core/data-model-design/</a></li>
+  <li>MongoDB Inc. <em>Query an Array of Embedded Documents</em>. <a href="https://www.mongodb.com/docs/manual/tutorial/query-embedded-documents/">mongodb.com/docs/manual/tutorial/query-embedded-documents/</a></li>
+  <li>The PostgreSQL Global Development Group. <em>PostgreSQL 18 Documentation: Concurrency Control and JSON Support</em>. <a href="https://www.postgresql.org/docs/18/">postgresql.org/docs/18/</a></li>
+  <li>Cátedra Bases de Datos II (UTN FRM). <em>Unidad 7: NoSQL y nuevas formas de almacenamiento</em>.</li>
+</ol>
+
+</body>
+</html>

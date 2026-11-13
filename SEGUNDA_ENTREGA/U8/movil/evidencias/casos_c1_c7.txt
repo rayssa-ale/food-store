@@ -1,0 +1,90 @@
+SQLite: 3.50.4 | db: C:\Users\alejo\OneDrive\Desktop\Food Store\movil\foodstore_movil.db
+importadas 50006 filas desde servidor_snapshot.csv (header=producto_id,nombre,precio_centavos,stock_visto,disponible,eliminado,fecha_copia)
+-- C1 catalogo disponible (sin servidor)
+   1 | Muzzarella | 120000 | 106
+   2 | Napolitana | 150000 | 106
+   3 | Jamón y Queso | 140000 | 99
+   4 | Coca-Cola 1L | 85000 | 50
+   5 | Agua mineral 500ml | 50000 | 30
+servidor: producto 1 precio 1200.00 -> 1250.00
+snapshot exportado: movil/evidencias/snapshot_c2.csv
+importadas 50006 filas desde snapshot_c2.csv (header=producto_id,nombre,precio_centavos,stock_visto,disponible,eliminado,fecha_copia)
+-- C2 primera evaluacion (esperado CONFLICTO)
+   c2-uuid-1 | CONFLICTO | CONFLICTO: precio_visto_distinto=1
+-- C2 cliente acepta (esperado SIMULADO_APROBADO)
+   c2-uuid-1 | CONFLICTO | CONFLICTO: precio_visto_distinto=1
+   c2-uuid-2 | SIMULADO_APROBADO | SIMULADO_APROBADO: coincide con instantanea 2026-11-12 12:08:09-03
+-- C3 stock insuficiente (esperado RECHAZADO)
+   c3-uuid-1 | RECHAZADO | RECHAZADO: stock_insuficiente=2
+servidor: producto 3 dado de baja logica (activo=false)
+snapshot exportado: movil/evidencias/snapshot_c4.csv
+importadas 50006 filas desde snapshot_c4.csv (header=producto_id,nombre,precio_centavos,stock_visto,disponible,eliminado,fecha_copia)
+-- C4 producto dado de baja (esperado RECHAZADO)
+   c4-uuid-1 | RECHAZADO | RECHAZADO: eliminado=3
+-- C4 fila de cache conservada con lápida
+   3 | Jamón y Queso | 0 | 1
+-- C4 catalogo disponible ya no muestra el producto 3
+   0
+-- C5 sin cambios (esperado SIMULADO_APROBADO)
+   c5-uuid-1 | SIMULADO_APROBADO | SIMULADO_APROBADO: coincide con instantanea 2026-11-12 12:08:10-03
+C6 reenvio mismo UUID -> ERROR DE PK ESPERADO: UNIQUE constraint failed: cola_sync.solicitud_uuid
+-- C6 antes/despues de repetir simulacion
+   5 | CONFLICTO,SIMULADO_APROBADO,RECHAZADO,RECHAZADO,SIMULADO_APROBADO
+   5 | CONFLICTO,SIMULADO_APROBADO,RECHAZADO,RECHAZADO,SIMULADO_APROBADO
+-- C6 solicitud original no reevaluada
+   c5-uuid-1 | SIMULADO_APROBADO | 2026-11-12T15:08:11.691Z
+-- pruebas_sqlite.sql (C7: se esperan dos errores y rollback)
+   OK                                                      | PRAGMA foreign_keys = ON
+   OK                                                      | SELECT 'C1_catalogo_disponible' AS prueba,
+      C1_catalogo_disponible | 1 | Muzzarella | 125000 | 106
+      C1_catalogo_disponible | 2 | Napolitana | 150000 | 106
+      C1_catalogo_disponible | 4 | Coca-Cola 1L | 85000 | 50
+      C1_catalogo_disponible | 5 | Agua mineral 500ml | 50000 | 30
+      C1_catalogo_disponible | 6 | Flan con dulce de leche | 95000 | 12
+   OK                                                      | BEGIN
+   OK                                                      | INSERT INTO pedido_borrador (id_local, usuario, forma_pago, fecha)
+   OK                                                      | INSERT INTO item_borrador (id_local, producto_id, cantidad, precio_cen
+   OK                                                      | INSERT INTO cola_sync (solicitud_uuid, id_local, estado, motivo)
+   OK                                                      | COMMIT
+   OK                                                      | SELECT 'borrador_confirmado' AS control, count(*) AS filas
+      borrador_confirmado | 1
+   OK                                                      | BEGIN
+   OK                                                      | INSERT INTO pedido_borrador (id_local, usuario, forma_pago, fecha)
+   OK                                                      | INSERT INTO item_borrador (id_local, producto_id, cantidad, precio_cen
+   OK                                                      | ROLLBACK
+   OK                                                      | SELECT 'borrador_rollback' AS control, count(*) AS filas
+      borrador_rollback | 0
+   OK                                                      | BEGIN
+   OK                                                      | INSERT INTO pedido_borrador (id_local, usuario, forma_pago, fecha)
+   ERROR: CHECK constraint failed: cantidad > 0            | INSERT INTO item_borrador (id_local, producto_id, cantidad, precio_cen
+   OK                                                      | ROLLBACK
+   OK                                                      | SELECT 'C7_cantidad_cero' AS control, count(*) AS filas
+      C7_cantidad_cero | 0
+   OK                                                      | BEGIN
+   OK                                                      | INSERT INTO pedido_borrador (id_local, usuario, forma_pago, fecha)
+   ERROR: FOREIGN KEY constraint failed                    | INSERT INTO item_borrador (id_local, producto_id, cantidad, precio_cen
+   OK                                                      | ROLLBACK
+   OK                                                      | SELECT 'C7_producto_inexistente' AS control, count(*) AS filas
+      C7_producto_inexistente | 0
+-- Estado final de cola_sync
+   c2-uuid-1 | c2-borrador | CONFLICTO | CONFLICTO: precio_visto_distinto=1
+   c2-uuid-2 | c2-borrador | SIMULADO_APROBADO | SIMULADO_APROBADO: coincide con instantanea 2026-11-12 12:08:09-03
+   c3-uuid-1 | c3-borrador | RECHAZADO | RECHAZADO: stock_insuficiente=2
+   c4-uuid-1 | c4-borrador | RECHAZADO | RECHAZADO: eliminado=3
+   c5-uuid-1 | c5-borrador | SIMULADO_APROBADO | SIMULADO_APROBADO: coincide con instantanea 2026-11-12 12:08:10-03
+   aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa | 11111111-1111-4111-8111-111111111111 | PENDIENTE | 
+-- Conteo final SQLite
+   producto_cache | 50006
+   pedido_borrador | 5
+   item_borrador | 5
+   cola_sync | 6
+-- Servidor PostgreSQL despues de los casos
+      metrica      |  valor  
+-------------------+---------
+ productos_activos | 50005
+ stock_total       | 4989376
+ productos         | 50006
+ pedidos           | 227009
+ detalle_pedido    | 549529
+(5 filas)
+
