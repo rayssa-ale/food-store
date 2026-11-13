@@ -137,5 +137,6 @@ responsabilidad del contenido final es del equipo.
 - El RPO de U6 depende de un respaldo diario; no hay PITR.
 - El SQL original de U7 no es reproducible con el `schema.sql` publicado; la
   versión corregida sí.
-- La descomposición de U4 tiene una observación de pérdida (F-U4-4) detectada en
-  el code review; la corrección está propuesta y pendiente de decisión.
+- F-U4-4 (descomposición con pérdida en U4) fue corregido en script e informe;
+  la reejecución en el motor quedó pendiente por falta de contraseña en la sesión
+  de cierre (la lógica se validó por simulación).

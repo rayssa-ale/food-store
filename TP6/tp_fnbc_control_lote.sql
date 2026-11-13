@@ -246,18 +246,27 @@ ROLLBACK TO SAVEPOINT demo_actualizacion;
 --
 -- Se viola FD2: ResponsableControlID -> DepositoID.
 --
--- Algoritmo de descomposición sin pérdida (visto en clase):
---   r1 = X  ∪  Y              (contiene la DF que se separa)
---   r2 = r  \  (X \ Y)        (se le quita el determinante, que ya
---                               es clave de r1)
+-- Algoritmo de descomposición sin pérdida (Silberschatz):
+--   r1 = X  ∪  Y          (contiene la DF que se separa)
+--   r2 = r  \  Y          (se le quita el atributo dependiente,
+--                          que ya vive en r1)
 --
 -- Con X = {ResponsableControlID} e Y = {DepositoID}:
 --   r1 = {ResponsableControlID, DepositoID}
---   r2 = {LoteID, DepositoID}       (r menos {ResponsableControlID})
+--   r2 = {LoteID, ResponsableControlID}    (r menos DepositoID)
 --
 -- r1: FD2 con determinante = clave primaria  -> FNBC.
--- r2: sólo queda FD1, cuyo determinante es su propia clave primaria
---     -> FNBC. Las dos relaciones cumplen FNBC.
+-- r2: sobre {LoteID, ResponsableControlID} no queda ninguna DF no
+--     trivial (FD1 ya no proyecta: le falta DepositoID) -> FNBC.
+--
+-- ADVERTENCIA (F-U4-4, code review de la segunda entrega): la
+-- variante "natural" r1 = {Resp, Dep} + r2 = {Lote, Dep} también
+-- queda en FNBC, PERO se reúne por DepositoID, que NO es superclave
+-- de ninguna de las dos ({DepositoID}+ = {DepositoID}): esa reunión
+-- es CON PÉRDIDA. El contraejemplo del final de este script la
+-- exhibe con datos. Por eso r2 se lleva ResponsableControlID y no
+-- DepositoID: el atributo común de la reunión pasa a ser
+-- ResponsableControlID, que sí es clave de r1.
 -- ============================================================
 
 CREATE TABLE responsable_deposito (
@@ -273,17 +282,22 @@ CREATE TABLE responsable_deposito (
 
 CREATE TABLE control_lote (
     lote_id                BIGINT NOT NULL REFERENCES lote (id)     ON DELETE RESTRICT,
-    deposito_id            BIGINT NOT NULL REFERENCES deposito (id) ON DELETE RESTRICT,
+    responsable_control_id BIGINT NOT NULL REFERENCES usuario (id)  ON DELETE RESTRICT,
     created_at             TIMESTAMPTZ NOT NULL DEFAULT now(),
-    CONSTRAINT pk_control_lote PRIMARY KEY (lote_id, deposito_id)
+    CONSTRAINT pk_control_lote PRIMARY KEY (lote_id, responsable_control_id)
 );
--- Nota: control_lote NO lleva responsable_control_id. El dato se
--- recupera por la reunión con responsable_deposito, que es lo que
--- hace que la DF2 quede en su propia tabla.
+-- Nota: control_lote NO lleva deposito_id. El depósito se recupera
+-- por la reunión con responsable_deposito sobre ResponsableControlID
+-- —clave de esa tabla—, y ésa es exactamente la condición que hace
+-- la reunión sin pérdida.
+-- Contrapartida declarada: FD1 ({LoteID, DepositoID} ->
+-- ResponsableControlID) deja de ser una restricción de esquema; se
+-- detecta con la consulta inyectiva del final del script.
 
--- Índice de apoyo para reconstruir la asignación desde la ruta
--- inversa (qué lotes controla un responsable en un depósito).
-CREATE INDEX ix_control_lote_deposito ON control_lote (deposito_id);
+-- Índice de apoyo para la ruta inversa (qué lotes controla cada
+-- responsable) y para que la vista filtre por responsable sin
+-- recorrer la tabla.
+CREATE INDEX ix_control_lote_responsable ON control_lote (responsable_control_id);
 
 -- ============================================================
 -- (f) MIGRACIÓN DE LOS DATOS Y VERIFICACIÓN
@@ -318,24 +332,29 @@ INSERT INTO responsable_deposito (responsable_control_id, deposito_id)
 SELECT DISTINCT responsable_control_id, deposito_id
   FROM control_lote_almacen;
 
-INSERT INTO control_lote (lote_id, deposito_id)
-SELECT DISTINCT lote_id, deposito_id
+-- Distinto es seguro acá: bajo la FD2 que se acaba de verificar, un
+-- mismo par (lote, responsable) no puede aparecer dos veces (eso
+-- exigiría al responsable en dos depósitos), así que el DISTINCT no
+-- colapsa nada.
+INSERT INTO control_lote (lote_id, responsable_control_id)
+SELECT DISTINCT lote_id, responsable_control_id
   FROM control_lote_almacen;
 
 -- ============================================================
 -- VISTA DE COMPATIBILIDAD
 --
 -- Reconstruye la relación original por reunión natural sobre
--- DepositoID, el atributo común de las dos relaciones
--- descompuestas.
+-- ResponsableControlID, el atributo común de las dos relaciones
+-- descompuestas y clave primaria de responsable_deposito: ésa es
+-- la condición del teorema que hace la reunión sin pérdida.
 -- ============================================================
 CREATE VIEW control_lote_almacen_compat AS
 SELECT cl.lote_id,
-       cl.deposito_id,
-       rd.responsable_control_id
+       rd.deposito_id,
+       cl.responsable_control_id
   FROM control_lote cl
   JOIN responsable_deposito rd
-    ON rd.deposito_id = cl.deposito_id;
+    ON rd.responsable_control_id = cl.responsable_control_id;
 
 -- Equivalencia: la vista debe reproducir la relación original, en
 -- las dos direcciones. Se espera 0 filas en cada lado.
@@ -356,7 +375,7 @@ SELECT * FROM control_lote_almacen_compat ORDER BY lote_id;
 SELECT * FROM responsable_deposito ORDER BY responsable_control_id;
 SELECT * FROM control_lote           ORDER BY lote_id;
 
--- El problema ya no es representable: en el esquema descomuesto no
+-- El problema ya no es representable: en el esquema descompuesto no
 -- se puede tener un responsable en dos depósitos, porque
 -- responsable_control_id es clave primaria de su tabla. (Debe dar
 -- 0 filas.)
@@ -372,32 +391,29 @@ COMMIT;
 --
 -- Criterio de superclave sobre el atributo común. En la
 -- descomposición r = r1 ⋈ r2 el atributo común es
---     r1 ∩ r2 = {DepositoID}
+--     r1 ∩ r2 = {ResponsableControlID}
 --
--- Teorema: r ⋈ r2 sobre el atributo común es SIN PÉRDIDA si ese
+-- Teorema: r1 ⋈ r2 sobre el atributo común es SIN PÉRDIDA si ese
 -- atributo es superclave de AL MENOS UNA de las dos relaciones.
 --
--- Aquí DepositoID es la clave primaria de control_lote (r2), o
--- sea superclave de r2. Por lo tanto control_lote ⋈
--- responsable_deposito es sin pérdida: no se puede duplicar ni
--- perder ninguna tupla de r. Y tampoco se cuela ninguna tupla
--- espuria, porque el nombre de la columna de unión coincide en
--- ambos lados (reunión natural): cada fila de la vista se sostiene
--- en una fila real de cada lado.
---
--- O sea: r2 guarda el par (LoteID, DepositoID) sin repetir y r1
--- resuelve el responsable de ese depósito; como r2 ya garantiza
--- una sola fila por par, la reunión no tiene por dónde
--- multiplicarse.
+-- Aquí ResponsableControlID es la clave primaria de
+-- responsable_deposito (r1) — y por FD2 determina todo r1 —, o sea
+-- superclave de r1. Por lo tanto responsable_deposito ⋈ control_lote
+-- es sin pérdida:
+--   * no MULTIPLICA: cada responsable aparece una sola vez en r1,
+--     así que cada fila de control_lote encuentra exactamente una
+--     fila pareja;
+--   * no PIERDE: cada par (lote, responsable) de r2 recupera su
+--     depósito en r1.
 --
 -- Prueba empírica de la ausencia de pérdida y de tuplas espurias,
 -- con el criterio de conteos y de suma de una clave surrogada:
 --
 --   original      3 filas
 --   vista         3 filas
---  cardinalidad y suma de (lote_id*1000000 + deposito_id*1000 +
---   responsable_control_id) idénticas en ambos lados, y el
---   EXCEPT ALL de las dos direcciones dio 0 filas.
+--   cardinalidad y suma de (lote_id*1000000 + deposito_id*1000 +
+--   responsable_control_id) idénticas en ambos lados, y el EXCEPT
+--   ALL de las dos direcciones da 0 filas.
 -- ============================================================
 SELECT 'original' AS lado, count(*) AS filas FROM control_lote_almacen
 UNION ALL
@@ -411,17 +427,67 @@ SELECT 'vista',
        sum(lote_id * 1000000 + deposito_id * 1000 + responsable_control_id)
   FROM control_lote_almacen_compat;
 
--- Y la prueba de que la reunión puede perder datos si se violara el
--- criterio: control_lote con el mismo deposito_id repetido en dos
--- lotes ES el caso permitido (deposito_id no es clave de r1), pero
--- el detalle que importa es que cada fila de la vista tiene
--- exactamente un responsable, cosa que el esquema original no
--- garantizaba. Se comprueba que la función de la vista es
--- inyectiva sobre el par (lote_id, deposito_id):
+-- Inyectividad de la vista sobre (lote_id, deposito_id): debe dar
+-- 0 filas. Es además el DETECTOR DE VIOLACIONES DE FD1: como la
+-- descomposición en FNBC no preserva {LoteID, DepositoID} ->
+-- ResponsableControlID (control_lote ya no tiene deposito_id), un
+-- mismo lote controlado por dos responsables del MISMO depósito no
+-- lo detiene ninguna restricción de esquema; esta consulta es la
+-- que lo hace visible. Si devuelve filas, hay que deshacer la
+-- asignación o volver a la síntesis 3FN.
 SELECT lote_id, deposito_id, count(*) AS veces
   FROM control_lote_almacen_compat
  GROUP BY lote_id, deposito_id
 HAVING count(*) > 1;
+
+-- ============================================================
+-- CONTRAEJEMPLO: LA VARIANTE DESCARTADA ERA CON PÉRDIDA (F-U4-4)
+--
+-- La primera versión de este script descomponía en
+--   r1 = responsable_deposito(Resp, Dep)
+--   r2 = control_lote(Lote, Dep)
+-- y reunía por DepositoID. Como {DepositoID}+ = {DepositoID} no es
+-- superclave de NINGUNA de las dos relaciones, esa reunión es CON
+-- PÉRDIDA. Se reproduce el contraejemplo mínimo con tablas
+-- temporales: dos lotes controlados en el depósito 30 por dos
+-- responsables distintos, ambos del depósito 30.
+--
+--   original (consistente con FD1 y FD2):
+--       (501, 30, 801)  y  (502, 30, 803)          -> 2 filas
+--   variante descartada, reunión por deposito_id     -> 4 filas
+--       aparecen (501,30,803) y (502,30,801): cada lote "hereda"
+--       al responsable del otro lote. Tuplas espurias.
+--   variante implementada, reunión por responsable   -> 2 filas
+--       exactamente las del original.
+--
+-- La prueba de la instancia del enunciado (un responsable por
+-- depósito) NO distingue las dos variantes: por eso un EXCEPT ALL
+-- 0/0 sobre esa instancia no es prueba de nada, y este
+-- contraejemplo sí.
+-- ============================================================
+CREATE TEMP TABLE _demo_resp_dep  (responsable_control_id BIGINT, deposito_id BIGINT);
+CREATE TEMP TABLE _demo_lote_dep (lote_id BIGINT, deposito_id BIGINT);
+CREATE TEMP TABLE _demo_lote_resp (lote_id BIGINT, responsable_control_id BIGINT);
+
+INSERT INTO _demo_resp_dep  VALUES (801, 30), (803, 30);
+INSERT INTO _demo_lote_dep VALUES (501, 30), (502, 30);
+INSERT INTO _demo_lote_resp VALUES (501, 801), (502, 803);
+
+\echo ''
+\echo '=== CONTRAEJEMPLO F-U4-4: reunion por deposito_id (variante DESCARTADA) ==='
+\echo '=== filas_variante_descartada debe dar 4; el original tiene 2           ==='
+SELECT count(*) AS filas_variante_descartada
+  FROM _demo_lote_dep ld
+  JOIN _demo_resp_dep rd ON rd.deposito_id = ld.deposito_id;
+
+\echo ''
+\echo '=== reunion por responsable_control_id (variante IMPLEMENTADA) ==='
+\echo '=== filas debe dar 2: exactamente las del original             ==='
+SELECT count(*) AS filas_variante_implementada
+  FROM _demo_lote_resp lr
+  JOIN _demo_resp_dep rd ON rd.responsable_control_id = lr.responsable_control_id;
+
+DROP TABLE _demo_resp_dep, _demo_lote_dep, _demo_lote_resp;
 
 -- ============================================================
 -- REVERSIBILIDAD DE LA DESCOMPOSICIÓN

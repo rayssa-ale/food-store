@@ -18,7 +18,7 @@ ejecutado y de una salida conservada en el repositorio.
 
 | Unidad | Pieza entregada | Resultado verificable |
 |---|---|---|
-| **U4** | FNBC sobre `control_lote_almacen` + cubo `fact_venta_categoria_dia` | Esquema en 3FN que **no** cumple FNBC; descomposición con una observación de pérdida detectada en el code review; reporte de **138,0 ms a 0,118 ms** |
+| **U4** | FNBC sobre `control_lote_almacen` + cubo `fact_venta_categoria_dia` | Esquema en 3FN que **no** cumple FNBC; descomposición **sin pérdida** (corregida tras el hallazgo F-U4-4, con contraejemplo de la variante descartada); reporte de **138,0 ms a 0,118 ms** |
 | **U5** | Roles, auditoría, simulacro de incidente, anonimización | 4 roles de grupo + 2 logins + `rol_auditoria`; permiso por columna; 20.000 filas anonimizadas con equivalencia agregada exacta |
 | **U6** | Respaldo, restauración, health check y mantenimiento | Respaldo de **32,62 KB**; RTO **6,18 s**; RPO **6 h 00 m 26 s**; 0 inconsistencias tras restore |
 | **U7** | Migración documental y consultas cruzadas | 10 pedidos migrados; 4 consultas Mongo con equivalentes SQL; paridad **7/7** y **4/4** |
@@ -75,31 +75,40 @@ determinante que no es superclave (`{ResponsableControlID}+` no contiene
 `LoteID`), así que **el esquema viola FNBC**. Es el caso canónico donde las dos
 definiciones se separan y donde citar 3FN como si fuera FNBC sería un error.
 
-### 3.2 Descomposición y verificación de pérdida
+### 3.2 Descomposición sin pérdida y su verificación
 
 El script descompone en `responsable_deposito (responsable_control_id PK,
-deposito_id)` y `control_lote (lote_id, deposito_id)`, ambas en FNBC. Verifica
-la equivalencia con `EXCEPT` bidireccional contra la vista de compatibilidad y
-obtiene 0 filas en ambos sentidos.
+deposito_id)` y `control_lote (lote_id, responsable_control_id)`, ambas en FNBC.
+La reunión es **sin pérdida** porque el atributo común es
+`{ResponsableControlID}`, que es la clave primaria de `responsable_deposito`
+(y por FD2 determina toda esa relación): la reunión no puede multiplicar filas
+—cada responsable aparece una sola vez— ni perderlas —cada par lote-responsable
+recupera su depósito—. El script lo verifica con `EXCEPT` bidireccional contra
+la vista de compatibilidad (0 filas en ambos sentidos), cardinalidad, firma y
+prueba inyectiva sobre `(lote_id, deposito_id)`. La lógica de la corrección fue
+validada con una simulación paso a paso; la reejecución de la Parte 1 en el
+motor (`psql -f TP6/tp_fnbc_control_lote.sql`) quedó pendiente por no disponer
+de contraseña en la sesión de cierre.
 
-**Hallazgo del code review (F-U4-4, severidad alta).** Esa verificación no
-prueba la reunión sin pérdida: la intersección de `r1` y `r2` es
-`{DepositoID}` y **no** es superclave de ninguna de las dos relaciones
-(`{DepositoID}+ = {DepositoID}`), por lo que la descomposición es con pérdida en
-general: con dos responsables en el mismo depósito, la vista multiplica filas.
-El `EXCEPT` 0/0 se explica porque la instancia de ejemplo tiene exactamente un
-responsable por depósito.
-
-La corrección propuesta es `control_lote (lote_id, responsable_control_id)`:
-la intersección pasa a ser `{ResponsableControlID}`, que sí determina
-`responsable_deposito`, y la reunión es sin pérdida. El costo es que la DF
-`{LoteID, DepositoID} -> ResponsableControlID` deja de ser una restricción
-declarativa. Queda como decisión pendiente del equipo y está documentada en
-`SEGUNDA_ENTREGA/code_review_segunda_entrega.md`.
+**Hallazgo del code review (F-U4-4, severidad alta) y corrección.** La primera
+versión usaba `control_lote (lote_id, deposito_id)` y reunía por `DepositoID`.
+También quedaba en FNBC, pero `{DepositoID}+ = {DepositoID}` no es superclave de
+ninguna de las dos relaciones: esa reunión es **con pérdida** —con dos lotes y
+dos responsables en el depósito 30, la vista devolvía 4 filas donde el original
+tiene 2—. Su `EXCEPT` 0/0 pasaba únicamente porque la instancia de ejemplo tiene
+exactamente un responsable por depósito. La corrección cambia `control_lote` a
+`(lote_id, responsable_control_id)`, agrega al script el contraejemplo ejecutable
+de la variante descartada y declara el costo: la FNBC no preserva la DF
+`{LoteID, DepositoID} -> ResponsableControlID` como restricción de esquema, de
+modo que la consulta inyectiva sobre la vista queda como detector de
+violaciones. El detalle está en `SEGUNDA_ENTREGA/code_review_segunda_entrega.md`.
 
 Las tres anomalías (inserción, actualización, borrado) se demuestran con SQL
 dentro de `SAVEPOINT`s y se revierten con `ROLLBACK TO`, de modo que el esquema
-de prueba nunca queda inconsistente.
+de prueba nunca queda inconsistente. La migración se ejecuta dentro de la
+transacción del script (reversible con el plan de `docs/kiro_u4/tasks.md`) y
+aborta si los datos heredados violan FD2, en lugar de resolver en silencio con
+`DISTINCT`.
 
 ### 3.3 Desnormalización medida, no intuida
 
@@ -351,7 +360,7 @@ Se revisaron los scripts de las cinco unidades con una escala de severidad
 | Unidad | Hallazgo | Severidad | Decisión |
 |---|---|---|---|
 | U4 | `fecha = CURRENT_DATE` devuelve 0 filas sobre `TIMESTAMPTZ` | Alta | Corregido: rango semiabierto |
-| U4 | Descomposición `(Resp, Dep) + (Lote, Dep)` con pérdida; `EXCEPT` 0/0 solo por la instancia | Alta | Documentado — corrección propuesta |
+| U4 | Descomposición `(Resp, Dep) + (Lote, Dep)` con pérdida; `EXCEPT` 0/0 solo por la instancia | Alta | Corregido: `(Lote, Resp)` + contraejemplo |
 | U4 | Cubo sin política de retención | Baja | Documentado |
 | U5 | Propuesta de `GRANT ALL` y `DELETE` general | Alta | Rechazado; default deny |
 | U5 | Distribución de roles supuesta (10.000/10.000) | Alta | Corregido con la salida real |
@@ -410,7 +419,7 @@ En SQLite: ejecutar `movil/schema_sqlite.sql`, importar
 
 | Riesgo | Impacto | Mitigación |
 |---|---|---|
-| U4: descomposición con pérdida (F-U4-4) | La vista de compatibilidad puede multiplicar filas si un depósito tiene más de un responsable | Corregir `control_lote` a `(lote_id, responsable_control_id)` antes de la defensa |
+| U4: la corrección F-U4-4 aún no se reejecutó en el motor | La salida verificada de la Parte 1 no está refrescada | Reejecutar `TP6/tp_fnbc_control_lote.sql` sobre `food_store_tp6` antes de la defensa |
 | U7 no reproducible con el `schema.sql` publicado | Un tercero no puede repetir la paridad 7/7 | Script corregido + nota en el informe U7 |
 | PII embebida en `migracion_mongodb.js` | Datos personales en el repositorio | Reemplazar por datos sintéticos antes de publicar |
 | `insertMany` sin transacción | Migración parcial ante un fallo | Carga a colección de staging + `renameCollection` |

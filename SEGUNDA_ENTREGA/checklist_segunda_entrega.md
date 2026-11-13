@@ -12,7 +12,7 @@ archivo o comando que permite contrastarlo sin confiar en este documento.
 | # | Unidad | Objetivo | Evidencia | Verificación |
 |---|---|---|---|---|
 | 1 | U4 | Analizar `control_lote_almacen` contra FNBC: DFs, clausuras, claves candidatas y distinción con 3FN | `TP6/tp_fnbc_control_lote.sql` §(a)–(c) | Ejecutar el script; el bloque de comentarios enumera K1 y K2 y dictamina la violación de FD2 |
-| 2 | U4 | Descomponer en FNBC, demostrar las tres anomalías y auditar la reunión | `TP6/tp_fnbc_control_lote.sql` §(d)–(f) | `EXCEPT` 0/0 **con observación**: la instancia tiene un responsable por depósito; ver F-U4-4 (corrección a `(lote, resp)` pendiente) |
+| 2 | U4 | Descomponer en FNBC, demostrar las tres anomalías y auditar la reunión | `TP6/tp_fnbc_control_lote.sql` §(d)–(f) | `EXCEPT` 0/0, cardinalidad/firma y prueba inyectiva; contraejemplo F-U4-4 (4 filas vs. 2) incluido. **Pendiente reejecutar** en el motor para refrescar la salida verificada. |
 | 3 | U4 | Desnormalizar el top 5 con justificación medida, camino caliente/frío y equivalencia | `TP6/tp_desnormalizacion_top_categorias.sql`; `TP6/TP6_Food_Store.pdf` | `EXPLAIN ANALYZE` antes (`549.529` filas, `138,0 ms`) y después (`3` filas, `6` buffers, `0,118 ms`); `EXCEPT` 0/0 |
 | 4 | U5 | Diseñar roles y permisos con mínimo privilegio, permiso por columna y `ALTER DEFAULT PRIVILEGES` | `sql/roles.sql`; `docs/kiro_roles_spec/` | `\du` y `information_schema.role_table_grants` en `docs/verificacion_permisos.txt`; `pg_default_acl` en 0 filas |
 | 5 | U5 | Activar la auditoría nativa y conservar la evidencia del log | `sql/roles.sql` (config), `docs/log_auditoria_prueba.txt`, `docs/informe_auditoria.md` | `SHOW log_statement` y hash SHA-256 del fragmento (`9C2C3C…6C93`) |
@@ -68,13 +68,14 @@ $psql = 'C:\Program Files\PostgreSQL\18\bin\psql.exe'
 
 | ID | Unidad | Observación | Estado |
 |---|---|---|---|
-| F-U4-4 | U4 | La descomposición entregada `(Resp, Dep) + (Lote, Dep)` es con pérdida en general; el `EXCEPT` 0/0 se explica por la instancia (un responsable por depósito) | Corrección propuesta, pendiente de decisión |
+| F-U4-4 | U4 | La descomposición `(Resp, Dep) + (Lote, Dep)` era con pérdida; se corrigió a `control_lote(lote_id, responsable_control_id)` con contraejemplo y costo de preservación declarado | **Corregido** (pendiente reejecutar en el motor) |
 | F-U7-1 | U7 | El SQL original usa un catálogo (`usuario`, `total`, `TERMINADO`) distinto del `schema.sql` publicado | Script corregido + nota en el informe |
 | F-U7-3 | U7 | El seed de la migración incluye contactos con formato real | Deuda: reemplazar por `@example.test` |
 
-Ninguna observación bloquea la entrega; las tres están documentadas con su
-evidencia y su corrección propuesta en
-`SEGUNDA_ENTREGA/code_review_segunda_entrega.md`.
+Las tres están documentadas con su evidencia en
+`SEGUNDA_ENTREGA/code_review_segunda_entrega.md`. F-U4-4 no bloquea la entrega
+como diseño: el artefacto corregido está incorporado; resta refrescar la salida
+ejecutada.
 
 ## 6. Declaración
 

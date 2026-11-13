@@ -99,7 +99,7 @@ reversión.
 | 1 | Las claves candidatas del caso están enumeradas y justificadas | `tp_fnbc_control_lote.sql` §(b) |
 | 2 | Se demuestra que el esquema cumple 3FN y no FNBC | §(c) |
 | 3 | Las tres anomalías se ejecutan y se revierten | §(d), `SAVEPOINT`/`ROLLBACK TO` |
-| 4 | La descomposición es sin pérdida: criterio de superclave + contraejemplo con dos responsables por depósito | `tp_fnbc_control_lote.sql` §(e), §(f) y **F-U4-4** del code review |
+| 4 | La descomposición es sin pérdida: criterio de superclave + contraejemplo con dos responsables por depósito | `tp_fnbc_control_lote.sql` §(e), §(f) y bloque CONTRAEJEMPLO (F-U4-4 corregido) |
 | 5 | El plan antes/después está medido | `EXPLAIN ANALYZE` en ambos scripts |
 | 6 | El cubo coincide con la consulta auditora | `EXCEPT` bidireccional |
 | 7 | El plan de reversión deja el estado anterior verificado | `tasks.md` §Reversión |

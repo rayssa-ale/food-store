@@ -55,62 +55,56 @@ no primos, 3FN no detecta nada.
 Cada una se ejecuta dentro de un `SAVEPOINT` y se revierte con `ROLLBACK TO`,
 para no dejar el esquema en un estado inconsistente.
 
-### 1.5 Descomposición y verificación de pérdida
+### 1.5 Descomposición (implementada)
 
-**Variante implementada (script entregado):**
+Algoritmo estándar con `X = {ResponsableControlID}`, `Y = {DepositoID}`:
 
-- `r1 = responsable_deposito (responsable_control_id PK, deposito_id)`
-- `r2 = control_lote (lote_id, deposito_id)`
+- `R1 = X ∪ Y = responsable_deposito (responsable_control_id PK, deposito_id)`
+- `R2 = R \ Y = control_lote (lote_id, responsable_control_id)`
 
-Ambas están en FNBC (`r1`: el determinante de FD2 es su PK; `r2`: solo queda FD1
-y su determinante es la PK). Pero **la reunión es con pérdida**:
-`r1 ∩ r2 = {DepositoID}`, y `{DepositoID}+ = {DepositoID}` no contiene
-`ResponsableControlID` ni `LoteID`, así que no es superclave de `r1` ni de `r2`.
+Ambas en FNBC: en `R1` el determinante de FD2 es su PK; sobre `R2` no queda
+ninguna DF no trivial (FD1 ya no proyecta: le falta `DepositoID`).
 
-El `EXCEPT` bidireccional del script da 0/0 únicamente porque la instancia de
-ejemplo tiene **un responsable por depósito** (801→30, 802→31): la reunión
-coincide con el original por casualidad de los datos. Con un segundo responsable
-en el depósito 30, `r1 ⋈ r2` produce filas espurias. Es el hallazgo **F-U4-4**
-del code review.
-
-**Variante correcta (propuesta):** algoritmo estándar con `X = {ResponsableControlID}`,
-`X+ = {ResponsableControlID, DepositoID}`:
-
-- `R1 = X+ = responsable_deposito (responsable_control_id, deposito_id)`
-- `R2 = (R − X+) ∪ X = control_lote (lote_id, responsable_control_id)`
-- `R1 ∩ R2 = {ResponsableControlID}` y `{ResponsableControlID}+ = R1`, por lo que
-  la reunión **sí** es sin pérdida.
-
-Costo de la corrección: la DF `{LoteID, DepositoID} → ResponsableControlID` deja
-de ser una restricción declarativa (BCNF no garantiza preservación de
-dependencias). Se compensa con un `UNIQUE`/disparador sobre la vista o se acepta
-como dependencia verificada por aplicación. Es una decisión pendiente del equipo.
+**Reunión sin pérdida:** `R1 ∩ R2 = {ResponsableControlID}`, que es la PK de
+`R1` — y por FD2 determina todo `R1` —, o sea superclave: la reunión no
+multiplica ni pierde filas. El script lo verifica con `EXCEPT` bidireccional
+(0/0), cardinalidad, firma y la prueba inyectiva sobre `(lote_id, deposito_id)`.
 
 `responsable_deposito` declara `UNIQUE (deposito_id, responsable_control_id)` y
 PK sobre `responsable_control_id`: la regla «un responsable, un depósito» deja
 de depender de la disciplina de la aplicación.
 
+**Variante descartada (F-U4-4).** La primera versión usaba
+`control_lote (lote_id, deposito_id)` y reunía por `DepositoID`. También queda
+en FNBC, pero `{DepositoID}+ = {DepositoID}` no es superclave de ninguna de las
+dos: la reunión es **con pérdida**. Su `EXCEPT` 0/0 pasaba únicamente porque la
+instancia de ejemplo tiene un responsable por depósito. El script incluye el
+contraejemplo (dos responsables y dos lotes en el depósito 30: 4 filas contra 2
+del original).
+
+**Costo declarado.** La FNBC no preserva FD1 (`{LoteID, DepositoID} →
+ResponsableControlID`): en `control_lote` ya no está `deposito_id`, así que
+nada impide por esquema que un lote sea controlado por dos responsables del
+mismo depósito. Se declara, se detecta con la consulta inyectiva sobre la vista
+y, si el negocio la exige como restricción dura, se resuelve con un disparador
+o volviendo a la síntesis 3FN.
+
 ### 1.6 Vista de compatibilidad
 
-La vista entregada reproduce el esquema original:
-
-```sql
-SELECT cl.lote_id, cl.deposito_id, rd.responsable_control_id
-  FROM control_lote cl
-  JOIN responsable_deposito rd ON rd.deposito_id = cl.deposito_id;
-```
-
-Con la variante implementada, esta vista solo es fiel mientras cada depósito
-tenga un responsable. Por eso **no sirve como oráculo** de equivalencia
-(F-U4-4): el `EXCEPT` 0/0 mide la instancia, no la descomposición.
-
-Con la variante correcta, la vista sí reconstruye sin pérdida:
+Reproduce el esquema original reuniendo por `responsable_control_id`, el
+atributo común que es clave de `responsable_deposito`:
 
 ```sql
 SELECT cl.lote_id, rd.deposito_id, cl.responsable_control_id
   FROM control_lote cl
   JOIN responsable_deposito rd USING (responsable_control_id);
 ```
+
+Permite que el código viejo siga leyendo sin cambios y sirve de oráculo para
+las pruebas de equivalencia: el `EXCEPT` bidireccional contra
+`control_lote_almacen` da 0/0 y, a diferencia de la variante descartada
+(F-U4-4), esa prueba vale para cualquier instancia que cumpla FD2, no solo para
+la del ejemplo.
 
 ## 2. Parte 2 — Desnormalización controlada
 

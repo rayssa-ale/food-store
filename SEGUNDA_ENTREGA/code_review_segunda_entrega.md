@@ -26,7 +26,7 @@ justificación y queda como deuda).
 | F-U4-1 | U4 | `fecha = CURRENT_DATE` devuelve 0 filas sobre `TIMESTAMPTZ` | Alta | Corregido |
 | F-U4-2 | U4 | Backfill con `trg_detalle_stock` deshabilitado | Media | Mitigado |
 | F-U4-3 | U4 | Cubo sin política de retención | Baja | Documentado |
-| F-U4-4 | U4 | La descomposición `(Resp, Dep) + (Lote, Dep)` es **con pérdida** en general y el `EXCEPT` 0/0 solo pasa por la instancia de ejemplo | Alta | Documentado — corrección propuesta |
+| F-U4-4 | U4 | La descomposición `(Resp, Dep) + (Lote, Dep)` era **con pérdida** en general y el `EXCEPT` 0/0 solo pasaba por la instancia de ejemplo | Alta | Corregido |
 | F-U5-1 | U5 | `GRANT ALL`, `SELECT` sobre todo y `DELETE` general | Alta | Rechazado |
 | F-U5-2 | U5 | Distribución de roles inventada (10.000/10.000) | Alta | Corregido |
 | F-U5-3 | U5 | Log de auditoría en OneDrive con ACL permisiva | Media | Documentado |
@@ -82,51 +82,58 @@ como advertencia en el script.
 es despreciable; no hay política de purga. Se documenta como deuda de
 mantenimiento (U6).
 
-### F-U4-4 · La descomposición aplicada no es sin pérdida en general — Alta · Documentado
+### F-U4-4 · La descomposición aplicada no era sin pérdida en general — Alta · Corregido
 
-**Qué se encontró.** El script descompone
+**Qué se encontró.** La primera versión del script descomponía
 
 - `responsable_deposito (responsable_control_id PK, deposito_id)`
 - `control_lote (lote_id, deposito_id)` — sin `responsable_control_id`
 
-y afirma que la reunión es sin pérdida porque `responsable_deposito ∩
-control_lote = {deposito_id}` «es clave» de una de las dos. **No lo es.**
-`deposito_id` es un atributo no clave en ambas: en `responsable_deposito` la
-clave es `responsable_control_id` (un depósito tiene varios responsables) y en
-`control_lote` la clave es el par `(lote_id, deposito_id)`.
+y afirmaba que la reunión era sin pérdida porque «`DepositoID` es clave de
+`control_lote`». **No lo es:** la clave de `control_lote` era el par
+`(lote_id, deposito_id)` y la de `responsable_deposito` es
+`responsable_control_id` (un depósito tiene varios responsables). Con el
+criterio de superclave, `{DepositoID}+ = {DepositoID}`, que no contiene ni
+`ResponsableControlID` ni `LoteID`: la descomposición **era con pérdida**.
 
-Con el criterio de superclave, `{DepositoID}+ = {DepositoID}`, que no contiene
-ni `ResponsableControlID` ni `LoteID`: la descomposición **es con pérdida**.
+**Contraejemplo.** Con dos lotes y dos responsables en el depósito 30 —
+original `(501,30,801)` y `(502,30,803)`, 2 filas —, la reunión por
+`deposito_id` devuelve **4**: aparecen `(501,30,803)` y `(502,30,801)`, pares
+que nunca existieron. El responsable que no controlaba el lote aparece como si
+lo controlara.
 
-**Contraejemplo.** Con `responsable_deposito = {(801,30), (802,30)}` y
-`control_lote = {(501,30)}`, la reunión produce dos filas —`(501,30,801)` y
-`(501,30,802)`— cuando la relación original tenía una sola. El responsable que
-no controlaba el lote aparece como si lo controlara.
+**Por qué la verificación no lo detectaba.** La instancia de ejemplo tiene **un
+solo responsable por depósito** (801→30, 802→31), así que la reunión coincidía
+con el original y el `EXCEPT` bidireccional daba 0/0. La prueba pasaba por
+casualidad de la instancia, no por corrección del esquema.
 
-**Por qué el script no lo detecta.** La instancia de ejemplo tiene **un solo
-responsable por depósito** (801→30, 802→31), así que la reunión coincide con el
-original y el `EXCEPT` bidireccional da 0/0. La prueba pasa por casualidad de la
-instancia, no por corrección del esquema. Basta insertar un segundo responsable
-en el depósito 30 (la propia anomalía de inserción) para que la vista devuelva
-filas espurias.
-
-**Corrección propuesta** (descomposición estándar por `C → B`, con `C+ = {C,B}`):
+**Corrección aplicada** (descomposición estándar `r1 = X ∪ Y`, `r2 = R \ Y`):
 
 - `responsable_deposito (responsable_control_id PK, deposito_id)` — sin cambios.
-- `control_lote (lote_id, responsable_control_id)` — **la clave pasa a ser el
-  par `(lote_id, responsable_control_id)`**, no el depósito.
-- Intersección `{responsable_control_id}`, que sí determina `responsable_deposito`
-  (`Resp+ = {Resp, Dep}`): reunión sin pérdida.
+- `control_lote (lote_id, responsable_control_id)` — clave
+  `(lote_id, responsable_control_id)`; se reúne por el responsable.
+- Intersección `{responsable_control_id}`, que sí es clave de
+  `responsable_deposito` (`Resp+ = {Resp, Dep}`): reunión **sin pérdida**.
 - Vista: `SELECT cl.lote_id, rd.deposito_id, cl.responsable_control_id
   FROM control_lote cl JOIN responsable_deposito rd USING (responsable_control_id)`.
-- Costo: la descomposición **no preserva** la DF `{Lote, Dep} → Resp` como
-  restricción declarativa; hay que verificarla con un disparador o aceptar la
-  pérdida de esa dependencia (BCNF no garantiza preservación).
+- El script ahora incluye el **contraejemplo ejecutable** de la variante
+  descartada (tablas temporales: 4 filas contra las 2 del original) y la
+  consulta inyectiva por `(lote_id, deposito_id)` como detector de violaciones
+  de FD1.
+- Costo declarado: la FNBC **no preserva** FD1 (`{Lote, Dep} → Resp`) como
+  restricción de esquema; se documenta en el script y en el informe U4.
 
-**Decisión.** Se documenta como hallazgo de severidad alta. No se reescribió el
-script entregado porque cambia la clave de `control_lote` y el informe U4 ya
-publicado; queda para decisión del equipo antes de la defensa. El plan de
-reversión y el cubo de la Parte 2 no se ven afectados.
+**Verificación de la corrección.** La lógica (chequeo previo de FD2, migración,
+vista, `EXCEPT` 0/0, cardinalidad, firma, inyectividad y contraejemplo) fue
+validada con una simulación paso a paso. Falta la **reejecución en el motor**
+(no hubo contraseña de PostgreSQL disponible en la sesión de cierre):
+
+```powershell
+& 'C:\Program Files\PostgreSQL\18\bin\psql.exe' -U postgres -h localhost `
+    -d food_store_tp6 -v ON_ERROR_STOP=1 -f TP6/tp_fnbc_control_lote.sql
+```
+
+El plan de reversión y el cubo de la Parte 2 no se ven afectados.
 
 ## 2. Unidad 5
 
@@ -300,9 +307,9 @@ predicado no filtra por `cantidad`. Se descartó con el plan real como evidencia
 
 - **U4:** `SAVEPOINT`/`ROLLBACK TO` para demostrar anomalías sin ensuciar el
   esquema; verificación de FD2 en los datos **antes** de migrar (aborta en vez
-  de resolver con `DISTINCT`); cubo con PK natural y granularidad explícita. La
-  vista de compatibilidad es una buena idea de verificación, pero en la versión
-  entregada no prueba la pérdida (F-U4-4).
+  de resolver con `DISTINCT`); cubo con PK natural y granularidad explícita; y,
+  tras la corrección F-U4-4, vista de compatibilidad que reúne por la clave de
+  `responsable_deposito` y contraejemplo explícito de la variante con pérdida.
 - **U5:** permisos por columna, `default deny`, hash del fragmento de log y
   distinción explícita entre auditoría nativa y `pgaudit`.
 - **U6:** restauración en base descartable, conteos por tabla y validación de

@@ -32,11 +32,16 @@
       con `DISTINCT`).
 - [x] Crear la vista `control_lote_almacen_compat`.
 - [x] Probar la reunión con `EXCEPT` bidireccional (0/0).
-- [ ] **Pendiente (F-U4-4):** la descomposición entregada
-      `(Resp, Dep) + (Lote, Dep)` es con pérdida en general; `Dep` no es
-      superclave de ninguna. El 0/0 se explica por la instancia (un responsable
-      por depósito). Corregir a `(Resp, Dep) + (Lote, Resp)` y agregar el
-      contraejemplo con dos responsables en el mismo depósito.
+- [x] **Corregido (F-U4-4):** la primera versión usaba
+      `(Resp, Dep) + (Lote, Dep)`, que es con pérdida en general (`Dep` no es
+      superclave de ninguna; el 0/0 se explicaba por la instancia). Se cambió a
+      `control_lote(lote_id, responsable_control_id)` y se agregó el
+      contraejemplo con dos responsables en el mismo depósito (4 filas contra
+      2 del original).
+- [x] Declarar que la FNBC no preserva FD1 y dejar la consulta inyectiva como
+      detector de violaciones.
+- [ ] **Reejecutar la Parte 1** sobre `food_store_tp6` tras la corrección, para
+      refrescar la salida verificada (EXCEPT 0/0, cardinalidad, firma).
 - [x] Refutar la duplicación por `deposito_id` repetido en `control_lote`.
 
 ## 3. Parte 2 — Desnormalización
@@ -98,11 +103,11 @@ $psql = 'C:\Program Files\PostgreSQL\18\bin\psql.exe'
 
 ## 6. Pendientes conocidos
 
-- [ ] **F-U4-4 (Alta):** corregir la descomposición de la Parte 1. La versión
-      entregada usa `control_lote(lote_id, deposito_id)`; la reunión con
-      `responsable_deposito` por `deposito_id` es con pérdida en general. La
-      alternativa sin pérdida es `control_lote(lote_id, responsable_control_id)`.
-      Requiere actualizar el script, la vista, el informe U4 y la defensa.
+- [ ] **Reejecutar la Parte 1** sobre `food_store_tp6`: la corrección F-U4-4
+      (descomposición sin pérdida, `control_lote(lote_id,
+      responsable_control_id)` + contraejemplo) fue validada con una simulación
+      de la lógica, pero la salida verificada del motor hay que refrescarla
+      con una ejecución del script corregido.
 - [ ] El informe U4 cita el esquema de `food_store_tp5`; si se reproduce desde
       `seed.sql` los volúmenes cambian y las cifras de filas no son
       comparables. Se documenta como condición de reproducción.

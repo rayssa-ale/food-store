@@ -63,9 +63,10 @@ en su sección de condiciones.
 
 ## Limitaciones declaradas
 
-- U4: la descomposición entregada es con pérdida en general (F-U4-4); el
-  `EXCEPT` 0/0 se explica por la instancia. La corrección a
-  `control_lote(lote_id, responsable_control_id)` está propuesta y pendiente.
+- U4: F-U4-4 (descomposición con pérdida) fue corregido en el script y en el
+  informe; la salida verificada en el motor quedó pendiente de reejecución (no
+  se dispuso de contraseña en la sesión de cierre). La lógica fue validada con
+  una simulación paso a paso y el contraejemplo está incorporado.
 - U7: el SQL original usa un catálogo (`usuario`, `total`, `TERMINADO`) distinto
   del `schema.sql` publicado; se agrega una versión corregida y se documenta.
 - U5: la auditoría es nativa (por sentencia), no fila por fila como `pgaudit`.
