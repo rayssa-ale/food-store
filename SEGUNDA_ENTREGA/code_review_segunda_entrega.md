@@ -202,6 +202,9 @@ FULL` documentada en `TP6/SPEC_U6.md`.
 El RPO medido (6 h 00 m 26 s) es consecuencia de un respaldo diario. Si el
 negocio exige menos pérdida, hay que acortar la frecuencia o pasar a WAL
 archiving / PITR. Se documenta como decisión de negocio, no como límite técnico.
+La programación diaria/semanal definida en `TP6/SPEC_U6.md` se materializa en
+`TP6/schedule_u6.ps1` (tareas de Windows para respaldo, health check y
+mantenimiento; el simulacro de restore es opt-in).
 
 ## 4. Unidad 7
 

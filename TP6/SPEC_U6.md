@@ -23,6 +23,38 @@ Establecer una directiva técnica formal para la administración de la base de d
 
 ---
 
+### 2.1 Programación automatizada (Windows Task Scheduler)
+
+`schedule_u6.ps1` registra las tareas del Programador de tareas de Windows que
+materializan la matriz anterior (idempotente, ejecutable como Administrador):
+
+| Tarea programada | Script / acción | Frecuencia | Horario |
+| :--- | :--- | :--- | :--- |
+| `\FoodStore\FoodStore-U6-Backup` | `backup_foodstore.ps1` | Diaria | 02:00 |
+| `\FoodStore\FoodStore-U6-HealthCheck` | `psql -f sql/health_check.sql` | Diaria | 07:00 |
+| `\FoodStore\FoodStore-U6-Maintenance` | `psql -f sql/maintenance.sql` | Semanal (dom) | 03:00 |
+| `\FoodStore\FoodStore-U6-RestoreDrill` *(opt-in)* | `restore_test.ps1` | Semanal (lun) | 08:00 |
+
+```powershell
+# Registrar (backup, health check y mantenimiento)
+.\TP6\schedule_u6.ps1
+
+# Incluir el simulacro de restauracion de laboratorio
+.\TP6\schedule_u6.ps1 -IncludeRestoreDrill
+
+# Verificar / ejecutar manualmente / quitar
+Get-ScheduledTask -TaskPath '\FoodStore\' | Format-Table TaskName,State
+Start-ScheduledTask -TaskPath '\FoodStore\' -TaskName 'FoodStore-U6-Backup'
+.\TP6\schedule_u6.ps1 -Remove [-IncludeRestoreDrill]
+```
+
+Las tareas se crean con inicio de sesion de servicio (S4U) para la cuenta
+indicada y **no** almacenan contrasenas: dependen de `pgpass.conf` accesible
+para esa cuenta (seccion 3). El simulacro de restauracion es opt-in porque crea
+y elimina la base descartable `foodstore_restore_test`.
+
+---
+
 ## 3. Políticas de Seguridad y Control de Credenciales
 1. **No Exposición de Contraseñas:** Queda estrictamente prohibido codificar contraseñas en texto plano dentro de scripts (`.ps1`, `.bat`, `.sql`) o confirmarlas en commits del repositorio Git.
 2. **Autenticación Vía `pgpass.conf`:** Se utiliza el mecanismo oficial de PostgreSQL mediante el archivo de contraseñas en Windows ubicado en `%APPDATA%\postgresql\pgpass.conf`, configurado con permisos exclusivos de usuario (`hostname:port:database:username:password`). De manera alternativa temporal, se admiten variables de entorno volátiles en memoria de sesión interactiva (`$env:PGPASSWORD`).

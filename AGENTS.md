@@ -17,10 +17,10 @@ Los scripts PostgreSQL sustentan los TP de integridad, concurrencia, seguridad y
     `TP6_Food_Store.pdf` (informe) y `carga_dia_actual.sql`, que siembra el
     día corriente para que el `EXPLAIN ANALYZE` del reporte no mida un
     conjunto vacío. Los .sql también están en la raíz del repo.
-  - Unidad 6: `SPEC_U6.md`, `backup_foodstore.ps1`, `restore_test.ps1`,
-    `sql/health_check.sql`, `sql/maintenance.sql`, `sql/validation_drill.sql`,
-    `informe_u6.pdf` y `anexo_evidencias_u6.pdf`. `backups/` y `logs/` no se
-    versionan.
+  - Unidad 6: `SPEC_U6.md`, `backup_foodstore.ps1`, `schedule_u6.ps1`,
+    `restore_test.ps1`, `sql/health_check.sql`, `sql/maintenance.sql`,
+    `sql/validation_drill.sql`, `informe_u6.pdf` y `anexo_evidencias_u6.pdf`.
+    `backups/` y `logs/` no se versionan.
 - `Trabajo Practico - Unidad 7/` — Unidad 7 (NoSQL): migración a MongoDB,
   consultas cruzadas, informe y PDF. `consultas_postgresql.sql` conserva el
   catálogo con el que se ejecutó; `consultas_postgresql_corregidas.sql` corre

@@ -393,8 +393,9 @@ $psql = 'C:\Program Files\PostgreSQL\18\bin\psql.exe'
 & $psql -d foodstore_test -v ON_ERROR_STOP=1 -f sql/usuario_anon.sql
 & $psql -d foodstore_test -v ON_ERROR_STOP=1 -f sql/simulacro_incidente.sql
 
-# U6 — respaldo, health check, mantenimiento y restore
+# U6 — respaldo, health check, mantenimiento, restore y programacion
 .\TP6\backup_foodstore.ps1
+.\TP6\schedule_u6.ps1            # registra tareas diarias/semanales (Admin, requiere pgpass.conf)
 & $psql -d foodStore -f TP6/sql/health_check.sql
 & $psql -d foodStore -f TP6/sql/maintenance.sql
 .\TP6\restore_test.ps1
@@ -444,6 +445,6 @@ En SQLite: ejecutar `movil/schema_sqlite.sql`, importar
 | Specs Kiro U8 | `docs/kiro/` |
 | U4 — scripts e informe | `TP6/` |
 | U5 — roles, auditoría, anonimización | `sql/`, `docs/` |
-| U6 — respaldo y mantenimiento | `TP6/`, `TP6/sql/` |
+| U6 — respaldo y mantenimiento | `TP6/` (`backup_foodstore.ps1`, `schedule_u6.ps1`, `restore_test.ps1`, `SPEC_U6.md`), `TP6/sql/` |
 | U7 — migración y consultas | `Trabajo Practico - Unidad 7/` |
 | U8 — tablet y semáforo | `movil/`, `docs/` |
