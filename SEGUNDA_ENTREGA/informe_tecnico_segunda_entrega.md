@@ -3,7 +3,8 @@
 **Proyecto:** Food Store · **Materia:** Base de Datos II — UTN FRM
 **Equipo G:** Ivana Gutiérrez, Rayssa Alejo, Julieta Chávez, Brisa Muñoz
 **Entrega:** segunda entrega del TPI · **Fecha:** noviembre de 2026
-**Repositorio:** `Food Store` (rama `main`)
+**Repositorio:** https://github.com/rayssa-ale/food-store  
+**Carpeta de entrega:** https://github.com/rayssa-ale/food-store/tree/main/SEGUNDA_ENTREGA
 
 ---
 
