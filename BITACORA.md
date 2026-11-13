@@ -1,107 +1,69 @@
-# BITÁCORA — Unidades 5 y 6 (roles, auditoría, incidente, anonimización; respaldo y recuperación)
+﻿# BITACORA.md
 
-Registro de uso de IA (OpenCode) durante la segunda entrega del TPI.
-Cada fila indica qué se pidió, qué propuso la IA y **cómo se validó o corrigió**
-antes de incorporarlo. La IA se usó como asistente; las decisiones y la
-verificación final son humanas.
+| Prompt enviado a la IA | Respuesta relevante recibida (resumida) | Validación o corrección humana aplicada |
+|-------------------------|------------------------------------------|------------------------------------------|
+| «Parte A: redactar en Kiro la especificación breve (requirements + design) de los roles de Food Store y el `roles.sql` con `CREATE ROLE`, `GRANT`/`REVOKE`, al menos un permiso a nivel de columna y `ALTER DEFAULT PRIVILEGES`. Luego, actuar como auditor de seguridad PostgreSQL y auditar `roles.sql` bajo mínimo privilegio: permisos excesivos (`GRANT ALL`, permisos sobre todas las columnas), falta de restricciones y mejoras concretas.» | Kiro relevó cuatro roles de grupo, dos roles de login y un rol adicional de auditoría, con justificación por rol. En la auditoría, OpenCode propuso mantener `SELECT` sobre todas las tablas —incluida `usuario`— “por simplicidad”, agregar `DELETE` a `rol_app_escritura` para “completar el CRUD”, usar `GRANT ALL PRIVILEGES` y revisar también tablas del sistema. | Se rechazaron las propuestas amplias: se mantuvo el permiso a nivel de columna sobre `usuario` para `rol_app_lectura`, no se otorgó `DELETE` general y se descartó `GRANT ALL`. Se conservó `ALTER DEFAULT PRIVILEGES` y se dejó la verificación (`\du` e `information_schema.role_table_grants`) en `docs/verificacion_permisos.txt`. El caso quedó documentado en `docs/kiro_roles_spec/auditoria_opencode.md`. |
+| «Parte B: activar y probar la auditoría nativa de PostgreSQL; guardar el fragmento del log en `docs/log_auditoria_prueba.txt` y redactar `docs/informe_auditoria.md`.» | Se detectó PostgreSQL 17.11 y las rutas reales (`data/postgresql.conf`, `data/pg_hba.conf`, `data/log/`). Se identificó que `food_Store` está vacía (0 filas) y que `foodstore_test` es la única base Food Store poblada; se propuso usarla y documentar la diferencia. | Se aceptó usar `foodstore_test` para la prueba y se dejó constancia de que `food_Store` existe pero no tiene datos. Se verificó que no se tocaran datos de negocio existentes. |
+| «Aplicá los parámetros de auditoría sin reiniciar y mostrá la verificación». | Se aplicó `ALTER SYSTEM` para `log_connections`, `log_disconnections`, `log_statement` y `log_line_prefix`; `pg_reload_conf()` devolvió `t`. `SHOW` y `pg_settings` confirmaron `source = configuration file` y `sourcefile = postgresql.auto.conf`. | Se revisó que `log_statement = all` fuera una desviación deliberada de `mod` (para evidenciar el `SELECT`) y se documentó que `ddl,mod` no es un valor válido en PostgreSQL 17. |
+| «Ejecutá la secuencia de lectura/escritura y un login fallido, y capturá la evidencia». | Se ejecutaron `SELECT`, `INSERT` (categoría id 11) y `UPDATE` en `foodstore_test`; el login con contraseña incorrecta produjo `FATAL` y `DETALLE` con la línea 115 de `pg_hba.conf`. Se guardó el fragmento crudo (2.261 bytes) con SHA-256 `9C2C3C0131782C96A7E026241F2F5B183EBADB1F2ECB634F92C7FBCEA96E6C93`. | Se contrastó el fragmento con el log original y se confirmó el hash. Se verificó que `pg_hba.conf` quedó con `scram-sha-256` en `127.0.0.1/32` y `::1/128`; la regla temporal `trust` usada para la prueba quedó documentada y revertida. |
+| «Redactá el informe con los Puntos 3 y 4». | Se generó `docs/informe_auditoria.md` con objetivo, entorno, configuración, verificación, secuencia, evidencia, análisis de límites vs. `pgaudit` y análisis del log como activo sensible (ACL de Windows, OneDrive, roles de PostgreSQL). | Se revisó que el informe no incluyera contraseñas ni datos de clientes, que distinguiera `pgaudit` (por sentencia/objeto) de la auditoría fila por fila, y que registrara el hallazgo de ACL permisiva y la ubicación en OneDrive como deuda de hardening. |
+| «Enviar únicamente `log_simulacro_anonimizado.txt` a OpenCode para reconstrucción cronológica». | Se envió solo el fragmento anonimizado con prompt restrictivo. OpenCode reconstruyó cronología, identificó actores, detectó escalamiento parcial (`GRANT` fallido, `CREATE ROLE` exitoso luego `DROP`), advirtió sobre falta de `REVOKE` y propuso hipótesis de contención. La respuesta completa se guardó en `docs/respuesta_opencode_incidente.txt`. | Se verificó que el log anonimizado no contenía mails, nombres ni direcciones identificables. Se contrastó la respuesta con el log crudo: acertó en cronología, escalamiento y conexión `trust`; omitió que `fn_autenticar` no existe en `food_Store`, que `app_web` y `admin_datos` no existen, que `usuario` está vacía y que todo fue ejecutado por el superusuario `postgres`. Se rechazaron inferencias no sustentadas y la decisión de contención quedó a cargo del equipo, fundamentada en evidencia y en las Partes A y B. |
+| «Parte D: anonimizar datos personales. Construir `usuario_anon` con datos sintéticos deterministas (sin `random()`/`now()`/hash del dato real), conservar `rol` con el mismo enum, truncar `created_at` a mes, `REVOKE ALL FROM PUBLIC`, script idempotente en `sql/usuario_anon.sql`. Luego pedir a OpenCode solo consultas agregadas de cantidad de usuarios por rol y por mes de alta: primero sobre `usuario_anon`, después la equivalente sobre `usuario`; sin `SELECT *`, sin columnas identificables, misma semántica y `ORDER BY`.» | OpenCode propuso las dos consultas con `date_trunc('month', created_at)`, filtro `eliminado = false`, `COUNT(*)` y `ORDER BY rol, mes_alta`, sin columnas identificables. En el borrador del informe asumió una distribución 10.000 `ADMIN` / 10.000 `USUARIO` sin haberla ejecutado. El prompt exacto y la respuesta quedaron registrados en `docs/verificacion_equivalencia.md`. | **Corrección real:** la ejecución mostró que las 20.000 filas son `USUARIO` (0 `ADMIN`); se descartó la distribución inventada y se reemplazaron las salidas del informe por las capturas reales. Se validó que ambas consultas tuvieran idéntica semántica (filtro, granularidad, `TimeZone`, `ORDER BY`) y solo agregados. Se agregó un control por `rol, (id % 10)` porque el mes es degenerado (un único valor, 2026-09). Se verificó: `count(*)` 20.000 en ambas tablas, `EXCEPT` bidireccional con 0 filas (rol/mes y control), no-fuga con 0 coincidencias en `mail`, `nombre+apellido`, `celular` y `contrasena`, y checksum md5 `703bd7edc6d5523f3093595e59ef90eb` idéntico tras reejecutar el script. Se documentó que es reemplazo determinista con utilidad analítica preservada, no k-anonimidad ni anonimización diferencial; `id` y el mes quedan como cuasi-identificadores; la equivalencia es solo agregada. `usuario` quedó intacta. |
 
-| # | Parte | Prompt (resumen) | Respuesta relevante de la IA | Validación / corrección humana |
-|---|---|---|---|---|
-| A-1 | A | "Diseñá los roles y permisos para la app y el área de datos." | Propuso un rol único `app` con `GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public`. | **Rechazado.** Viola mínimo privilegio (incluye `INSERT/UPDATE/DELETE` y el hash). Se separó en 5 roles de grupo + 2 logins y se otorgó sólo lo necesario. |
-| A-2 | A | "Asegurá que la app no pueda leer el hash." | Propuso `GRANT SELECT ON usuario` a nivel tabla, asumiendo que "la app no consulta `contrasena`". | **Corregido.** A nivel tabla el hash queda expuesto. Se pasó a permisos **por columna** excluyendo `contrasena`; verificado con `information_schema.column_privileges`. |
-| A-3 | A | "Verificá separación de tareas entre datos y auditoría." | Propuso hacer `admin_datos` miembro de `rol_auditor` "para simplificar". | **Rechazado.** Un administrador que puede leer/alterar la auditoría rompe la separación. Se dejó fuera; `pg_has_role('admin_datos','rol_auditor','MEMBER') = f`. |
-| A-4 | A | "Revisá que `rol_reportes` no acceda a PII." | Propuso mantener el `GRANT` sobre `v_reporte_pedidos_cliente` porque "ya es una vista de reporte". | **Rechazado.** La vista expone nombre/apellido/email y anula la restricción por columna de `cliente`. Se revocó para reportes y se conservó sólo para la app; `has_table_privilege('rol_reportes', vista, 'SELECT') = f`. |
-| A-5 | A | "Revisá los privilegios por defecto." | Propuso `ALTER DEFAULT PRIVILEGES ... GRANT SELECT ON TABLES TO rol_reportes`. | **Rechazado.** Una tabla futura puede contener PII; se dejó *default deny* y otorgamiento explícito. `pg_default_acl` quedó vacío. |
-| B-1 | B | "Activá la auditoría nativa y explicá qué aporta." | Propuso `log_statement='all'`, `log_connections=on`, `log_disconnections=on` y prefijo `%m [%p] %u@%d %h`. | **Aceptado con advertencia.** `all` registra literales (mails/claves). Se documentó que en producción va `mod`/`ddl` + `pgaudit`; el log compartido se anonimizó. |
-| B-2 | B | "Probá un login fallido real." | Propuso conectar como `app_web` con `psql`; el primer intento quedó esperando la clave. | Se usó `-w` y una clave efímera por `ALTER ROLE` (no versionada). El `FATAL` quedó registrado y se extrajo el fragmento. |
-| C-1 | C | "Armá el simulacro con escalamiento y pruebas negativas." | Propuso bloques `DO` con `GRANT admin_datos` y `RAISE NOTICE` para informar el resultado. | **Corregido.** `NOTICE` no llega al log del servidor (queda bajo `log_min_messages`), así que la evidencia no mostraba el bloqueo. Se cambió a `RAISE WARNING` y se re-ejecutó; el log ahora prueba `ESCALAMIENTO BLOQUEADO`. |
-| C-2 | C | "Anonimizá el fragmento del log para compartirlo." | El primer script reemplazó `app_web@food` dentro del prefijo `app_web@food_store_u5`, corrompiendo el log. | **Detectado al leer la salida.** Se restringió el reemplazo a correos **citados** (`'...'`) y se excluyó el prefijo `usuario@base`; se regeneró el archivo. |
-| C-3 | C | "Reconstruí el incidente sólo con el log anonimizado." | Afirmó IP externa, contraseña comprometida y exfiltración. | **Marcado como no sustentado.** El log muestra `::1` (localhost), no prueba cómo se obtuvo la clave ni que las filas se exportaran. Se corrigió el informe y se separó "hipótesis" de "hecho". |
-| C-4 | C | "Proponé contención." | Propuso revocar `rol_app_lectura` y bloquear la IP. | **Ajustado.** Revocar el rol global rompe la app; la contención se dirigió: rotar credencial, revisar el login exitoso, revisar el `SELECT` masivo y agregar bloqueo por intentos. Decisión humana. |
-| D-1 | D | "Anonimizá `usuario` y verificá que el agregado no cambie." | Propuso reemplazar nombre/mail pero **conservar el `id` real**; también sugirió valores aleatorios. | **Corregido.** El `id` permite re-identificar por JOIN y los valores aleatorios rompen la equivalencia. Se usó `row_number()` determinista y se preservó rol/activo/mes; verificado con `EXCEPT` en ambos sentidos → 0 filas. |
-| E-1 | E | "Organizá el historial Git por partes." | Propuso un commit por parte (A–E) con mensajes `feat(u5): ...`. | **Pendiente de aprobación.** No se commitea sin pedido explícito; los mensajes propuestos están en la sección de Git. |
+---
 
-## Caso más significativo (IA propone un permiso más amplio)
+## Análisis Crítico: Caso más significativo de error o imprecisión de la IA
 
-En **A-1/A-2** la IA propuso `GRANT ALL PRIVILEGES ON ALL TABLES` y, al pedirle
-"que la app no lea el hash", insistió con `GRANT SELECT` a nivel tabla. Ambas
-opciones **habrían expuesto `contrasena`** y dado escritura innecesaria. Se
-detectó leyendo el SQL propuesto línea por línea y contrastándolo con la
-matriz de privilegios; la corrección fue otorgar **por columna** y verificar
-el resultado con `has_column_privilege`/`column_privileges`, no con la
-intención declarada.
+El caso más significativo es el de la **Parte C**, porque la reconstrucción forense es el núcleo del trabajo y porque el error no fue un detalle de forma sino una lectura equivocada de la evidencia. OpenCode recibió únicamente el log anonimizado y asumió que los “intentos fallidos de inicio de sesión contra `fn_autenticar`” eran autenticaciones fallidas reales, cuando el log mostraba `ERROR: no existe la función fn_autenticar` y no `FATAL: autenticación fallida`. También asumió que `app_web` y `admin_datos` existían: el `GRANT admin_datos TO app_web` falló porque el rol `app_web` no existía, no porque el esquema de mínimo privilegio lo bloqueara. Además, mencionó a `postgres` pero no enfatizó que toda la sesión se ejecutó como **superusuario** por `trust` desde loopback, que es lo que explica el éxito de `CREATE ROLE` y cambia por completo la hipótesis de contención. Tampoco advirtió que la tabla `usuario` estaba vacía en `food_Store`.
 
-El mismo patrón apareció en **A-4/A-5**, ya no en una tabla sino en una
-**vista** y en los **privilegios por defecto**: `v_reporte_pedidos_cliente`
-expone PII y el `GRANT` a `rol_reportes` habría sido una fuga; el `SELECT`
-automático sobre tablas futuras habría repetido el problema con cada tabla
-nueva. La lección es que el mínimo privilegio se verifica sobre **todo objeto
-consultable** (tabla, vista, función) y sobre **objetos futuros**.
+Se lo detectó recién al contrastar la respuesta con el **log crudo**, con el script ejecutado y con el estado real del motor (`\du`, `\df`, `\dt`): la función y los roles no existían, la tabla tenía 0 filas y el usuario de sesión era `postgres`. Esa verificación permitió separar lo que la IA leyó del log de lo que infirió sin sustento. La decisión de contención final se tomó con esa evidencia y no se delegó a la IA.
 
-## Caso más significativo (IA afirma de más)
+Un segundo caso relevante ocurrió en la **Parte D**: al redactar el borrador del informe, la IA afirmó una distribución de **10.000 usuarios `ADMIN` y 10.000 `USUARIO`** que nunca había consultado. La ejecución real devolvió **20.000 `USUARIO` y 0 `ADMIN`**, en un único mes de alta. Se detectó porque la salida se ejecutó antes de documentar, se reemplazaron los valores supuestos por las capturas de terminal y se agregó la distinción entre el dominio del enum `rol` (que admite `ADMIN`) y la distribución observada (que no contiene ninguno). El control por `rol, (id % 10)` se incorporó justamente para que la equivalencia no dependiera de un agrupamiento mensual degenerado. Ambos casos quedaron registrados en las filas de la tabla y en `docs/informe_incidente.md` y `docs/verificacion_equivalencia.md`.
 
-En **C-3** la reconstrucción fue plausible pero incluyó tres afirmaciones que
-el log **no** sustenta (IP externa, contraseña comprometida, exfiltración).
-Se contrastó cada afirmación con la línea correspondiente del log y se
-reclasificó como hipótesis. Es el principal riesgo de usar IA en un informe de
-incidente: un texto convincente puede convertirse en "hecho" si no se verifica.
+## Revisión del Historial de Git
 
-## Unidad 6 — respaldo, mantenimiento y recuperación
+El repositorio refleja un avance progresivo por partes: no hay un commit único con todo el trabajo, sino un commit descriptivo por cada una de las Partes A, B, C y D, en orden cronológico.
+
+| Parte | Commit | Fecha | Mensaje |
+|---|---|---|---|
+| A | `3ade361` | 2026-10-24 14:46 | `Parte A: Diseno e implementacion de esquema de roles, permisos y especificacion Kiro` |
+| B | `5144030` | 2026-10-24 15:57 | `Parte B: Activacion y pruebas de parametros de auditoria en PostgreSQL` |
+| C | `3e5807c` | 2026-10-25 20:46 | `Parte C: Simulacro de incidente de seguridad y analisis critico de IA` |
+| D | `09b82c0` | 2026-10-25 21:30 | `Parte D: Anonimizacion de datos personales y verificacion de equivalencia` |
+| E | pendiente de cierre | 2026-10-25 | `Parte E: Consolidacion final de la bitacora y analisis critico` |
+
+Los mensajes identifican la parte y la acción realizada, y el historial permite reconstruir el orden del trabajo. La Parte E se consolida en este mismo archivo; el commit de cierre con el mensaje indicado completa la secuencia A → E.
+
+Queda una deuda de orden menor: hay ocho archivos marcados como eliminados y todavía sin commitear, que corresponden a duplicados de la reorganización de la raíz hacia `sql/` y `docs/` y al texto extraído del PDF. No afectan el avance por partes, pero conviene commitearlos por separado para dejar `git status` limpio y evitar que se mezclen con el cierre de la Parte E.
+
+---
+
+## Unidad 8 — tablet SQLite y semáforo
 
 | # | Parte | Prompt (resumen) | Respuesta relevante de la IA | Validación / corrección humana |
 |---|---|---|---|---|
-| U6-1 | 1–2 | "Armá la SPEC y los scripts de backup, health check, maintenance y restore." | Generó la SPEC y la primera versión de los cuatro scripts con `pg_dump -Fc`, guardas de destino y logs. | **Revisado.** Se agregaron conteos previos al respaldo, verificación con `pg_restore --list`, `-w` y la guarda `*_restore_test`; se ejecutó todo manualmente. |
-| U6-2 | 2 | "Elegí la acción de mantenimiento." | Propuso inicialmente justificar `ANALYZE` diciendo que "el planner no tenía estadísticas"; también evaluó `VACUUM FULL`. | **Corregido.** El health check mostró que `pg_class.reltuples` ya tenía estimaciones copiadas por `createdb -T`; sólo `categoria` estaba en -1 y `pg_stat_user_tables` no tenía historial. Se descartó `VACUUM FULL` y se justificó `ANALYZE` con la observación real; verificado antes/después. |
-| U6-3 | 2 | "Corré el simulacro de restauración." | El primer `restore_test.ps1` abortó en `dropdb --if-exists`: PowerShell trató el NOTICE de stderr como error por `$ErrorActionPreference='Stop'`. | **Detectado en la salida.** Se cambió el manejo de stderr nativo a `Continue` + verificación de `$LASTEXITCODE`; el segundo intento restauró y validó todo. |
-| U6-4 | 2–3 | "Revisá qué falta después de restaurar." | El restore mostró que autovacuum autoanalizó las tablas grandes, pero `categoria` quedó sin `pg_statistic`; además `--no-owner --no-privileges` dejó sólo a `postgres` con privilegios. | **Confirmado con consultas.** Se agregó al runbook `ANALYZE;` + reaplicar `sql/roles.sql`/grants (o restaurar sin `--no-privileges`). Evidencia en `U6/evidencias/`. |
-| U6-5 | 3 | "Generá el informe de una página." | Generó `informe_u6.pdf` con reportlab a partir de `informe_u6.md`; incluye RTO/RPO, validaciones, problema y mejora. | **Verificado.** `pypdf` confirma 1 página; se contrastaron los valores con los logs/JSON y se corrigieron las cifras. |
+| U8-1 | 1.b | "Diseñá las tablas SQLite con precio y stock." | Proponía `REAL`, sin `STRICT` y sin centavos. | **Corregido.** `precio_centavos INTEGER`, `STRICT`, `CHECK` y `PRAGMA foreign_keys = ON`; se creó la base desde cero y se ejecutaron las pruebas. |
+| U8-2 | 2.b | "Escribí el semáforo que compara solicitudes." | Actualizaba todas las solicitudes, incluso las ya aprobadas. | **Corregido.** Solo `PENDIENTE`; `evaluado_en` no cambia al repetir (C6). Evidencia en `movil/evidencias/c6_reevaluacion.txt`. |
+| U8-3 | 2.a | "Importá el CSV de psql en SQLite." | Suponía booleanos `0/1`. | **Corregido.** psql exporta `t/f`; se conservan como texto y se normalizan con `CASE`. Verificado en C1 y C4. |
+| U8-4 | 2.c | "¿Qué hago cuando el servidor da de baja un producto?" | Borraba la fila de `producto_cache`. | **Descartado.** Se conserva con `eliminado = 1` para no romper la FK y mantener la lápida (C4). |
+| U8-5 | 3.c | "Revisá los scripts de la cursada" (OpenCode Plan). | Probó un índice sobre `detalle_pedido(cantidad)` y `VACUUM FULL` periódico. | **Descartados.** El plan sigue `Seq Scan` con y sin índice; `VACUUM FULL` bloquea. Se aceptaron las correcciones de fecha/rango y de ACLs post-restore. Evidencia en `movil/evidencias/code_review_db.txt`. |
 
-### Caso más significativo (U6: el diagnóstico se generaliza de más)
-
-En **U6-2** la IA pasó de "las estadísticas no se copiaron" a "el planner no tiene
-estadísticas", pero el health check mostró que `pg_class.reltuples` sí tenía
-estimaciones para las tablas grandes; el problema real era más acotado
-(`categoria` sin analizar y `pg_statistic` ausente tras un restore lógico). La
-corrección fue contrastar `pg_stat_user_tables`, `pg_class.reltuples` y
-`pg_statistic` por separado antes de elegir la acción. En **U6-4** el restore
-confirmó el riesgo de `--no-owner --no-privileges`: los datos están, pero la app
-no tiene permisos. La lección: un restore "OK" en conteos no es un restore listo
-para producción.
-
-## Unidad 8 - tablet SQLite y semaforo
-
-| # | Parte | Prompt (resumen) | Respuesta relevante de la IA | Validacion / correccion humana |
-|---|---|---|---|---|
-| U8-1 | 1.b | "Disena las tablas SQLite con precio y stock." | Proponia `REAL`, sin `STRICT` y sin centavos. | **Corregido.** `precio_centavos INTEGER`, `STRICT`, `CHECK` y `PRAGMA foreign_keys = ON`; se creo la base desde cero y se ejecutaron las pruebas. |
-| U8-2 | 2.b | "Escribe el semaforo que compara solicitudes." | Actualizaba todas las solicitudes, incluso las ya aprobadas. | **Corregido.** Solo `PENDIENTE`; `evaluado_en` no cambia al repetir (C6). Evidencia en `movil/evidencias/c6_reevaluacion.txt`. |
-| U8-3 | 2.a | "Importa el CSV de psql en SQLite." | Suponia booleanos `0/1`. | **Corregido.** psql exporta `t/f`; se conservan como texto y se normalizan con `CASE`. Verificado en C1 y C4. |
-| U8-4 | 2.c | "Que hago cuando el servidor da de baja un producto?" | Borraba la fila de `producto_cache`. | **Descartado.** Se conserva con `eliminado = 1` para no romper la FK y mantener la lapida (C4). |
-| U8-5 | 3.c | "Revisa los scripts de la cursada" (OpenCode Plan). | Probo un indice sobre `detalle_pedido(cantidad)` y `VACUUM FULL` periodico. | **Descartados.** El plan sigue `Seq Scan` con y sin indice; `VACUUM FULL` bloquea. Se aceptaron las correcciones de fecha/rango y de ACLs post-restore. Evidencia en `movil/evidencias/code_review_db.txt`. |
-
-### Caso mas significativo (U8: la tablet no debe borrar la lapida)
+### Caso más significativo (U8: la tablet no debe borrar la lápida)
 
 En **U8-4** la IA propuso eliminar la fila local del producto dado de baja. Eso
 rompe la FK de `item_borrador` y borra la prueba del motivo del rechazo. Se
-corrigio a una baja logica local (`eliminado = 1`, `disponible = 0`): el
-catalogo disponible ya no la muestra, pero la fila queda para C4. La leccion es
-que la cache tambien necesita una politica de bajas, no solo de altas.
+corrigió a una baja lógica local (`eliminado = 1`, `disponible = 0`): el
+catálogo disponible ya no la muestra, pero la fila queda para C4. La lección es
+que la caché también necesita una política de bajas, no solo de altas.
 
 ## Estado de Git
 
 **U8 quedó commiteada** en `4b97f27` (esquema SQLite, instantánea y semáforo),
 `c6837c7` (casos C1–C7, base de la tablet y evidencias), `46a6634`
-(requisitos/design/tasks de Kiro, bitácora de IA y DUIA) y el commit de cierre
-con el informe final y el índice actualizado.
+(requisitos/design/tasks de Kiro, bitácora de IA y DUIA) y `507d798` (informe
+final, orden de reproducción e índice actualizado).
 
-**U5 y U6 siguen sin commit** (requieren aprobación explícita). Estructura
-propuesta:
-
-1. `feat(u5): base de usuarios, autenticación y auditoría de login`
-2. `feat(u5): roles y permisos con mínimo privilegio (Parte A)`
-3. `feat(u5): auditoría nativa y evidencia de prueba (Parte B)`
-4. `feat(u5): simulacro de incidente y log anonimizado (Parte C)`
-5. `feat(u5): anonimización y verificación de equivalencia (Parte D)`
-6. `docs(u5): informes de auditoría/incidente y bitácora (Parte E)`
-7. `feat(u6): respaldo custom, health check y mantenimiento seguro`
-8. `test(u6): simulacro de restauración con RTO/RPO y validaciones`
-9. `docs(u6): SPEC, informe y evidencias del simulacro`
+La U5 del equipo (Partes A–E) ya está en `origin/main`. La versión local de U5 y
+la de U6 de esta sesión quedan fuera de este commit para revisarlas por
+separado, porque el repositorio ya tiene implementaciones de esas unidades
+subidas por el resto del equipo.
