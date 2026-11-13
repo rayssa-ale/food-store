@@ -21,7 +21,8 @@ print("\n=======================================================================
 print("CONSULTA 4.a: Mostrar todos los pedidos, incluyendo su identificador y estado");
 print("===============================================================================");
 // Proyección específica de identificadores (relacional original pedido_id y _id de Mongo),
-// estado, fecha y total para visualización compacta.
+// estado y total para visualización compacta. No incluye `fecha`: la salida de
+// esta consulta no la muestra (la 4.b sí la proyecta y la formatea).
 const res4a = db.pedidos.find(
   {},
   { _id: 1, pedido_id: 1, estado: 1, total: 1 }

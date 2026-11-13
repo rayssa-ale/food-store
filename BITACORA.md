@@ -1,5 +1,22 @@
 ﻿# BITACORA.md
 
+Bitácora consolidada de la **segunda entrega (Unidades 4 a 8)**. Registra el
+pedido a la IA, la respuesta relevante y la validación o corrección humana. Las
+filas de U4–U7 resumen interacciones documentadas en los scripts, informes y en
+`SEGUNDA_ENTREGA/code_review_segunda_entrega.md`; las de U5 y U8 conservan el
+registro original del equipo.
+
+## Unidad 4 — FNBC y desnormalización controlada
+
+| # | Parte | Pedido a la IA (resumen) | Respuesta relevante | Validación / corrección humana |
+|---|---|---|---|---|
+| U4-1 | 1 (FNBC) | «Especificá el caso `control_lote_almacen`, calculá claves candidatas y escribí el script con las anomalías.» | Redactó la descomposición y las tres anomalías, pero en la primera versión asumió que un esquema en 3FN ya estaba en FNBC y filtró el día con `fecha = CURRENT_DATE`. | **Corregido.** Se calcularon las clausuras y se demostró el caso 3FN sin FNBC (FD2 con determinante no superclave). El filtro pasó a rango semiabierto: con `= CURRENT_DATE` el plan medía 0 filas; con rango, 12.269 pedidos. |
+| U4-2 | 2 (desnormalización) | «¿Conviene guardar `pedido.total` o materializar el top 5 con una vista materializada?» | Propuso almacenar `total` y usar una MV con `REFRESH` periódico. | **Descartado.** `total` introduce dependencia transitiva (viola 3FN) y la MV no sostiene el camino incremental en tiempo real. Se eligió el cubo `fact_venta_categoria_dia` con disparadores caliente/frío y backfill con la misma agregación del auditor. |
+| U4-3 | 2 (medición) | «¿Qué índice acelera la consulta del top 5?» | Propuso un índice sobre `detalle_pedido(cantidad)`. | **Descartado con el plan real.** La agregación sigue con `Seq Scan` porque el predicado no filtra por `cantidad`; el costo estaba en el volumen explorado, no en el acceso. Se resolvió con el cubo: 138,0 ms → 0,118 ms. |
+| U4-4 | 1 (code review) | «Revisá la prueba de reunión sin pérdida del script.» | Aceptó que `{DepositoID}` fuera clave de `responsable_deposito` y tomó el `EXCEPT` 0/0 como prueba de corrección. | **Análisis corregido.** `{DepositoID}+ = {DepositoID}` no es superclave de ninguna de las dos relaciones: la descomposición es con pérdida en general. El 0/0 se explica porque la instancia tiene un responsable por depósito. Corrección propuesta (F-U4-4): `control_lote(lote_id, responsable_control_id)`; queda pendiente de decisión. |
+
+## Unidad 5 — Seguridad, auditoría y anonimización
+
 | Prompt enviado a la IA | Respuesta relevante recibida (resumida) | Validación o corrección humana aplicada |
 |-------------------------|------------------------------------------|------------------------------------------|
 | «Parte A: redactar en Kiro la especificación breve (requirements + design) de los roles de Food Store y el `roles.sql` con `CREATE ROLE`, `GRANT`/`REVOKE`, al menos un permiso a nivel de columna y `ALTER DEFAULT PRIVILEGES`. Luego, actuar como auditor de seguridad PostgreSQL y auditar `roles.sql` bajo mínimo privilegio: permisos excesivos (`GRANT ALL`, permisos sobre todas las columnas), falta de restricciones y mejoras concretas.» | Kiro relevó cuatro roles de grupo, dos roles de login y un rol adicional de auditoría, con justificación por rol. En la auditoría, OpenCode propuso mantener `SELECT` sobre todas las tablas —incluida `usuario`— “por simplicidad”, agregar `DELETE` a `rol_app_escritura` para “completar el CRUD”, usar `GRANT ALL PRIVILEGES` y revisar también tablas del sistema. | Se rechazaron las propuestas amplias: se mantuvo el permiso a nivel de columna sobre `usuario` para `rol_app_lectura`, no se otorgó `DELETE` general y se descartó `GRANT ALL`. Se conservó `ALTER DEFAULT PRIVILEGES` y se dejó la verificación (`\du` e `information_schema.role_table_grants`) en `docs/verificacion_permisos.txt`. El caso quedó documentado en `docs/kiro_roles_spec/auditoria_opencode.md`. |
@@ -30,13 +47,46 @@ El repositorio refleja un avance progresivo por partes: no hay un commit único 
 | B | `5144030` | 2026-10-24 15:57 | `Parte B: Activacion y pruebas de parametros de auditoria en PostgreSQL` |
 | C | `3e5807c` | 2026-10-25 20:46 | `Parte C: Simulacro de incidente de seguridad y analisis critico de IA` |
 | D | `09b82c0` | 2026-10-25 21:30 | `Parte D: Anonimizacion de datos personales y verificacion de equivalencia` |
-| E | pendiente de cierre | 2026-10-25 | `Parte E: Consolidacion final de la bitacora y analisis critico` |
+| E | `d194e17` | 2026-11-12 | `chore(entrega): consolidar U5, U6 y TP7 del equipo y limpiar duplicados` |
 
-Los mensajes identifican la parte y la acción realizada, y el historial permite reconstruir el orden del trabajo. La Parte E se consolida en este mismo archivo; el commit de cierre con el mensaje indicado completa la secuencia A → E.
+Los mensajes identifican la parte y la acción realizada, y el historial permite
+reconstruir el orden del trabajo. La Parte E se consolidó en este mismo archivo
+y el commit de cierre completa la secuencia A → E.
 
-Queda una deuda de orden menor: hay ocho archivos marcados como eliminados y todavía sin commitear, que corresponden a duplicados de la reorganización de la raíz hacia `sql/` y `docs/` y al texto extraído del PDF. No afectan el avance por partes, pero conviene commitearlos por separado para dejar `git status` limpio y evitar que se mezclen con el cierre de la Parte E.
+La deuda de orden menor quedó saldada: los duplicados de la reorganización y el
+texto extraído del PDF se commitearon o se descartaron en `d194e17`. El árbol de
+trabajo quedó limpio salvo dos `.zip` de entregas anteriores
+(`ENTREGA_TPI/Parcial I_equipoG.zip` y `TP4/tp4.zip`), que no forman parte de
+esta entrega.
 
 ---
+
+## Unidad 6 — Mantenimiento, respaldo y recuperación
+
+| # | Pedido a la IA (resumen) | Respuesta relevante | Validación / corrección humana |
+|---|---|---|---|
+| U6-1 | «Redactá la SPEC de mantenimiento y respaldo para `foodStore` con RTO/RPO.» | Propuso `VACUUM FULL` periódico como mantenimiento y no contempló reaplicar privilegios después del restore. | **Rechazado y corregido.** `VACUUM FULL` bloquea y reescribe; se usa `VACUUM (VERBOSE, ANALYZE)` con `n_dead_tup = 0`. El runbook ahora reaplica roles y `GRANT`s tras el restore. |
+| U6-2 | «Verificá que la restauración haya quedado bien.» | Informó «restore OK» mirando solo los conteos por tabla. | **Corregido.** Se agregó `has_table_privilege` (detectó `app_web` sin `SELECT` sobre `pedido`) y `validation_drill.sql`: 4/5/12/11/20 filas, 0 inconsistencias. RTO 6,18 s; RPO 6 h 00 m 26 s. |
+| U6-3 | «Medí el impacto del incidente y la recuperación.» | Propuso estimar el RPO por la hora del último respaldo sin medirlo. | **Corregido.** Se midió la diferencia real entre el último respaldo y el incidente (`6 h 00 m 26 s`) y se contrastó con la meta (< 24 h). |
+
+## Unidad 7 — NoSQL: migración y evaluación tecnológica
+
+| # | Consigna | Pedido a la IA (resumen) | Respuesta relevante | Validación / corrección humana |
+|---|---|---|---|---|
+| U7-1 | 1–3 | «Diseñá el modelo documental de pedidos y justificá embedding vs. referencias.» | Recomendó embedding para todo el dominio y afirmó que eliminar JOINs siempre mejora el rendimiento. | **Parcialmente aceptado.** El embedding se adoptó para el documento de pedido (lectura completa en un acceso), pero se refutó la superioridad absoluta: depende del patrón de acceso. Dictamen híbrido. |
+| U7-2 | 4 | «Escribí las consultas equivalentes en PostgreSQL a las de MongoDB.» | Generó SQL con `usuario`, `pedido.usuario_id`, `p.total` y `estado = 'TERMINADO'`. | **Detectado en code review.** Ninguno existe en el `schema.sql` publicado (`cliente`, `cliente_id`, total derivable, ENUM sin `TERMINADO`). Se agregó `consultas_postgresql_corregidas.sql` y se documentó la diferencia; el original se conserva como evidencia de lo ejecutado. |
+| U7-3 | 5 | «Verificá la paridad entre MongoDB y PostgreSQL.» | Presentó 7/7 y 4/4 como prueba de fidelidad universal. | **Acotado.** La paridad es válida sobre el catálogo de la base de trabajo de U7 (10 pedidos). Sobre el seed publicado los conteos son otros; el informe lo declara. |
+| U7-4 | 6–7 | «Refutá las afirmaciones de la IA sobre MongoDB.» | La IA sostuvo que la atomicidad del documento alcanza para el stock y que MongoDB siempre gana en lectura. | **Refutado con documentación oficial.** La atomicidad de documento único no cubre pedido + stock + pago; se requieren transacciones multi-documento. Dictamen: PostgreSQL fuente de verdad, MongoDB almacén de lectura. |
+
+### Caso más significativo (U7: el catálogo que no era)
+
+El error más costoso de U7 no fue conceptual sino de reproducibilidad: la IA
+escribió el SQL «equivalente» contra un catálogo que no es el del repositorio.
+El script corre en la máquina donde se hizo la práctica, pero un tercero que
+clone el repo y cargue `schema.sql` + `seed.sql` obtiene un error de columna, no
+una comparación. Se detectó recién al contrastar el SQL con `schema.sql` durante
+el code review de cierre. La lección: la paridad entre motores no vale si el
+esquema de referencia no está declarado junto al script.
 
 ## Unidad 8 — tablet SQLite y semáforo
 
@@ -58,12 +108,21 @@ que la caché también necesita una política de bajas, no solo de altas.
 
 ## Estado de Git
 
-**U8 quedó commiteada** en `4b97f27` (esquema SQLite, instantánea y semáforo),
-`c6837c7` (casos C1–C7, base de la tablet y evidencias), `46a6634`
-(requisitos/design/tasks de Kiro, bitácora de IA y DUIA) y `507d798` (informe
-final, orden de reproducción e índice actualizado).
+| Unidad | Commits |
+|---|---|
+| U4 | `b2bde0d`, `aa59180` |
+| U5 | `19690c9`, `3aa729d`, `aeb97dc`, `aab0868`, `bc97b80`, cierre `d194e17` |
+| U6 | `4e02112`, consolidación `d194e17` |
+| U7 | `f517c98`, consolidación `d194e17` |
+| U8 | `4b97f27`, `c6837c7`, `46a6634`, `507d798` |
 
-La U5 queda con la versión del equipo (Partes A–E, rama de Julieta) y la U6 con
+La U5 quedó con la versión del equipo (Partes A–E, rama de Julieta) y la U6 con
 la de Ivana en `TP6/`. Las variantes locales de U5 y U6 se descartaron para no
 duplicar implementaciones. El TP7 quedó consolidado en
-`Trabajo Practico - Unidad 7/`, con el informe que incluye a todo el equipo.
+`Trabajo Practico - Unidad 7/`, con el informe que incluye a todo el equipo y
+con el código de la migración y las consultas.
+
+El cierre de la segunda entrega (informe único, checklist, code review, specs de
+U4 y consolidación de esta bitácora) es el commit que agrega
+`SEGUNDA_ENTREGA/`; se lo puede ubicar con
+`git log --oneline -- SEGUNDA_ENTREGA docs/kiro_u4`.

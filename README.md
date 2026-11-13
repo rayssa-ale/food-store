@@ -18,8 +18,33 @@ decide). El código fuente vive en la raíz y en `sql/`.
 | **U6** — Mantenimiento, respaldo y recuperación | `TP6/`, `TP6/sql/` | SPEC, backup/restore, health check, maintenance, `informe_u6.pdf`, anexo de evidencias | `4e02112` |
 | **U7** — NoSQL: MongoDB vs PostgreSQL | `Trabajo Practico - Unidad 7/` | migración, consultas cruzadas, informes HTML/PDF | `f517c98` |
 | **U8** — Food Store en la feria: SQLite + semáforo | `movil/`, `docs/` | schema/pruebas/semaforo SQLite, snapshot CSV, db, `informe.pdf`, specs Kiro, bitácora y DUIA | `4b97f27`, `c6837c7`, `46a6634` |
+| **Segunda entrega (U4–U8)** | `SEGUNDA_ENTREGA/` | informe técnico único + PDF, checklist de 14 objetivos, code review y índice de la entrega | ver `git log -- SEGUNDA_ENTREGA` |
 
 Historial completo: `git log --oneline` (cada commit describe su pieza y su evidencia).
+
+---
+
+## Segunda entrega (Unidades 4 a 8)
+
+`SEGUNDA_ENTREGA/` reúne los documentos de cierre que integran U4–U8:
+
+- `informe_tecnico_segunda_entrega.md` / `.pdf` — informe único con resultados
+  verificables, condiciones de reproducción, riesgos y deuda.
+- `checklist_segunda_entrega.md` — los 14 objetivos con evidencia y forma de
+  verificarlos.
+- `code_review_segunda_entrega.md` — hallazgos, severidad y decisión sobre todos
+  los scripts (incluye el SQL corregido de U7).
+- `README_ENTREGA.md` — orden de lectura y mapa de archivos.
+
+La DUIA consolidada está en `docs/DUIA.md` y la bitácora de IA en
+`BITACORA.md`. Las specs de Kiro de U4 (con plan de reversión) están en
+`docs/kiro_u4/`.
+
+> Limitación declarada: el SQL original de U7 usa un catálogo (`usuario`,
+> `pedido.total`, `'TERMINADO'`) que no coincide con el `schema.sql` publicado.
+> Se conserva como evidencia de lo ejecutado y se agrega
+> `Trabajo Practico - Unidad 7/consultas_postgresql_corregidas.sql`, que sí corre
+> sobre `schema.sql` + `seed.sql`.
 
 ---
 

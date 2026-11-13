@@ -22,7 +22,9 @@ Los scripts PostgreSQL sustentan los TP de integridad, concurrencia, seguridad y
     `informe_u6.pdf` y `anexo_evidencias_u6.pdf`. `backups/` y `logs/` no se
     versionan.
 - `Trabajo Practico - Unidad 7/` — Unidad 7 (NoSQL): migración a MongoDB,
-  consultas cruzadas, informe y PDF.
+  consultas cruzadas, informe y PDF. `consultas_postgresql.sql` conserva el
+  catálogo con el que se ejecutó; `consultas_postgresql_corregidas.sql` corre
+  contra `schema.sql` (cliente/cliente_id, total derivado).
 - `movil/` — Unidad 8 (entrega): `schema_sqlite.sql`, `pruebas_sqlite.sql`,
   `semaforo.sql`, `v_snapshot_movil.sql`, `exportar_snapshot.sql`,
   `verificacion_servidor.sql`, `servidor_snapshot.csv`,
@@ -30,8 +32,13 @@ Los scripts PostgreSQL sustentan los TP de integridad, concurrencia, seguridad y
   precios en centavos (`INTEGER`), tablas `STRICT` y baja lógica local
   (`eliminado = 1`) para no romper la FK del borrador.
 - `docs/kiro/` — Unidad 8: `requirements.md` (EARS), `design.md` y `tasks.md`.
+- `docs/kiro_u4/` — Unidad 4: `requirements.md`, `design.md` y `tasks.md` con el
+  plan de reversión de la FNBC y del cubo.
+- `SEGUNDA_ENTREGA/` — cierre de U4–U8: informe técnico único (`.md` + `.pdf`),
+  checklist de 14 objetivos, code review de scripts y `README_ENTREGA.md`.
 - `docs/informe.pdf`, `docs/informe_u8.md`, `docs/generar_informe_u8.py`,
-  `docs/bitacora_ia.md` y `docs/DUIA.md` — entrega U8.
+  `docs/bitacora_ia.md` — entrega U8. `docs/DUIA.md` y `BITACORA.md` están
+  consolidadas para toda la segunda entrega (U4–U8).
 - `protocolo_seguridad.md` — protocolo copia / transacción / respaldo.
 - `docs/` — informes de laboratorio (concurrencia, lectura crítica) y DUIA.
 - `.kiro/` — steering docs compartidos con la herramienta Kiro.
