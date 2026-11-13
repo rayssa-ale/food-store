@@ -6,21 +6,21 @@
 <style>
   @page {
     size: A4 portrait;
-    margin: 1.0cm 1.2cm;
+    margin: 0.9cm 1.1cm;
   }
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     color: #1a202c;
     background-color: #ffffff;
-    line-height: 1.35;
-    font-size: 8.8pt;
+    line-height: 1.32;
+    font-size: 8.6pt;
     margin: 0;
     padding: 0;
   }
   .header-box {
     border-bottom: 2px solid #2b6cb0;
-    padding-bottom: 5px;
-    margin-bottom: 8px;
+    padding-bottom: 4px;
+    margin-bottom: 6px;
   }
   .university-title {
     font-size: 7.5pt;
@@ -31,57 +31,66 @@
     margin-bottom: 2px;
   }
   h1 {
-    font-size: 13pt;
+    font-size: 12.5pt;
     color: #1a365d;
     margin: 0 0 2px 0;
     text-transform: uppercase;
     letter-spacing: 0.2px;
   }
   .subtitle {
-    font-size: 9.5pt;
+    font-size: 9pt;
     color: #2b6cb0;
     font-weight: 600;
-    margin-bottom: 5px;
+    margin-bottom: 4px;
   }
   .metadata {
-    font-size: 8pt;
+    font-size: 7.8pt;
     color: #4a5568;
     background-color: #f7fafc;
     border-left: 3px solid #3182ce;
     padding: 4px 8px;
     display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-bottom: 6px;
+  }
+  .meta-row {
+    display: flex;
     flex-wrap: wrap;
     gap: 12px;
-    margin-bottom: 8px;
   }
-  .metadata span strong {
+  .metadata strong {
     color: #2d3748;
   }
+  .metadata a {
+    color: #2b6cb0;
+    text-decoration: none;
+  }
   h2 {
-    font-size: 10.2pt;
+    font-size: 10pt;
     color: #2c5282;
-    margin-top: 10px;
-    margin-bottom: 4px;
+    margin-top: 8px;
+    margin-bottom: 3px;
     border-bottom: 1px solid #e2e8f0;
     padding-bottom: 2px;
     page-break-after: avoid;
   }
   h3 {
-    font-size: 8.8pt;
+    font-size: 8.6pt;
     color: #2d3748;
-    margin-top: 6px;
-    margin-bottom: 3px;
+    margin-top: 5px;
+    margin-bottom: 2px;
     page-break-after: avoid;
   }
   p {
     margin-top: 2px;
-    margin-bottom: 5px;
+    margin-bottom: 4px;
     text-align: justify;
   }
   ul, ol {
     margin-top: 2px;
-    margin-bottom: 5px;
-    padding-left: 16px;
+    margin-bottom: 4px;
+    padding-left: 15px;
   }
   li {
     margin-bottom: 2px;
@@ -90,11 +99,11 @@
     background-color: #1e1e1e;
     color: #d4d4d4;
     border-radius: 4px;
-    padding: 6px 8px;
+    padding: 5px 7px;
     font-family: "Cascadia Code", Consolas, "Courier New", monospace;
-    font-size: 7.5pt;
-    line-height: 1.25;
-    margin: 4px 0;
+    font-size: 7.2pt;
+    line-height: 1.22;
+    margin: 3px 0;
     overflow-x: auto;
     page-break-inside: avoid;
   }
@@ -107,8 +116,8 @@
   table.data-table {
     width: 100%;
     border-collapse: collapse;
-    margin: 6px 0;
-    font-size: 8pt;
+    margin: 5px 0;
+    font-size: 7.8pt;
     page-break-inside: avoid;
   }
   table.data-table th, table.data-table td {
@@ -128,7 +137,7 @@
   .badge-success {
     display: inline-block;
     padding: 1px 5px;
-    font-size: 7pt;
+    font-size: 6.8pt;
     font-weight: 700;
     color: #22543d;
     background-color: #c6f6d5;
@@ -140,8 +149,8 @@
     border: 1px solid #e2e8f0;
     border-left: 3px solid #3182ce;
     border-radius: 4px;
-    padding: 6px 8px;
-    margin: 5px 0;
+    padding: 5px 7px;
+    margin: 4px 0;
     page-break-inside: avoid;
   }
   .card-contrast {
@@ -149,8 +158,8 @@
     border: 1px solid #feebc8;
     border-left: 3px solid #dd6b20;
     border-radius: 4px;
-    padding: 6px 8px;
-    margin: 6px 0;
+    padding: 5px 7px;
+    margin: 5px 0;
     page-break-inside: avoid;
   }
   .card-conclusion {
@@ -158,15 +167,15 @@
     border: 1px solid #c6f6d5;
     border-left: 4px solid #38a169;
     border-radius: 4px;
-    padding: 8px 10px;
-    margin: 8px 0;
+    padding: 7px 9px;
+    margin: 6px 0;
     page-break-inside: avoid;
   }
   .conclusion-title {
     font-weight: 700;
     color: #22543d;
-    margin-bottom: 3px;
-    font-size: 9.5pt;
+    margin-bottom: 2px;
+    font-size: 9.2pt;
   }
   .page-break {
     page-break-after: always;
@@ -185,10 +194,19 @@
 </div>
 
 <div class="metadata">
-  <span><strong>Materia:</strong> Bases de Datos II</span>
-  <span><strong>Proyecto:</strong> Food Store</span>
-  <span><strong>Entorno:</strong> PostgreSQL 18 + MongoDB 7.0/8.0 (mongosh)</span>
-  <span><strong>Fecha:</strong> Noviembre 2026</span>
+  <div class="meta-row">
+    <span><strong>Materia:</strong> Bases de Datos II</span>
+    <span><strong>Proyecto:</strong> Food Store</span>
+    <span><strong>Entorno:</strong> PostgreSQL 18 + MongoDB 7.0/8.0 (mongosh)</span>
+    <span><strong>Fecha:</strong> Noviembre 2026</span>
+  </div>
+  <div class="meta-row">
+    <span><strong>Integrantes del Equipo:</strong> Ivana Gutierrez · Rayssa Alejo · Julieta Chavez · Brisa Muñoz</span>
+  </div>
+  <div class="meta-row">
+    <span><strong>Repositorio GitHub:</strong> <a href="https://github.com/rayssa-ale/food-store">https://github.com/rayssa-ale/food-store</a></span>
+    <span><strong>Rama / Entrega:</strong> <code>tp7-ivana</code> (o <code>main</code>)</span>
+  </div>
 </div>
 
 <h2>1. Introducción y Alcance del Trabajo</h2>

@@ -3,7 +3,14 @@
 
 **Materia:** Bases de Datos II — Tecnicatura Universitaria en Programación  
 **Institución:** Universidad Tecnológica Nacional – Facultad Regional Mendoza (UTN FRM)  
-**Proyecto:** Food Store  
+**Proyecto Integrador:** Food Store  
+**Integrantes del Equipo:**
+- Ivana Gutierrez
+- Rayssa Alejo
+- Julieta Chavez
+- Brisa Muñoz  
+**Repositorio de Trabajo:** [https://github.com/rayssa-ale/food-store](https://github.com/rayssa-ale/food-store)  
+**Rama / Entrega:** `tp7-ivana` (o `main`)  
 **Entorno Operativo:** PostgreSQL 18 (Relacional) | MongoDB 7.0 / 8.0 (NoSQL Documental) | Mongo Shell (`mongosh`) / Node.js  
 **Fecha:** Noviembre de 2026  
 
@@ -13,7 +20,7 @@
 
 El presente trabajo práctico aborda la exploración y modelado documental NoSQL mediante **MongoDB** para un subconjunto crítico del sistema gastronómico **Food Store**, contrastando su diseño, semántica de consulta y comportamiento transaccional frente al motor relacional **PostgreSQL**.
 
-El dominio analizado corresponde al circuito transaccional central de ventas: **pedidos, sus líneas de detalle, clientes asociados y productos consumidos**. El objetivo es evaluar el impacto de abandonar el esquema estrictamente normalizado (3FN / FNBC) en pos de un modelo desnormalizado basado en **Embedding** (incrustación de documentos y arreglos), validando la paridad de resultados mediante consultas cruzadas y contrastando críticamente las recomendaciones generadas por herramientas de Inteligencia Artificial contra la documentación oficial de ambos motores.
+El dominio analizado corresponde al circuito transaccional central de ventas: **pedidos, sus líneas de detalle, clientes asociados y productos consumidos**. El objetivo es evaluar el impacto de abandonar el esquema estrictamente normalizado (3FN / FNBC) en pos de un modelo desnormalizado basado en **Embedding** (incrustación de documentos y arreglos), validando la paridad de resultados mediante consultas cruzadas y contrastando críticamente las recomendaciones generadas por herramientas de Inteligencia Artificial frente a la documentación técnica oficial de ambos motores.
 
 ---
 
@@ -24,7 +31,7 @@ El dominio analizado corresponde al circuito transaccional central de ventas: **
 En el esquema relacional original de Food Store implementado en PostgreSQL intervienen cuatro tablas principales vinculadas mediante restricciones de integridad referencial:
 
 1. **`pedido`**: Cabecera del pedido (PK: `id`; FK: `usuario_id` hacia `usuario(id)`; columnas: `fecha`, `estado`, `forma_pago`, `total`, `created_at`, `eliminado`).
-2. **`detalle_pedido`**: Entidad débil asociativa N:M (PK: `id`; FK: `pedido_id` hacia `pedido(id)`; FK: `producto_id` hacia `producto(id)`; columnas: `cantidad`, `precio_unitario`, `subtotal`; restricción: `UNIQUE (pedido_id, producto_id)`).
+2. **`detalle_pedido`**: Entidad asociativa N:M (PK: `id`; FK: `pedido_id` hacia `pedido(id)`; FK: `producto_id` hacia `producto(id)`; columnas: `cantidad`, `precio_unitario`, `subtotal`; restricción: `UNIQUE (pedido_id, producto_id)`).
 3. **`usuario`** (rol cliente): Datos del cliente comprador (PK: `id`; columnas: `nombre`, `apellido`, `mail`, `celular`).
 4. **`producto`**: Catálogo de artículos disponibles (PK: `id`; FK: `categoria_id` hacia `categoria(id)`; columnas: `nombre`, `precio`, `stock`, `disponible`).
 
@@ -214,7 +221,7 @@ La IA recomendó migrar a MongoDB argumentando que *"al eliminar los JOINs media
 > La decisión se fundamenta en dos criterios técnicos determinantes:  
 > 1. **Garantía Transaccional e Integridad Operativa:** El ciclo de creación de pedidos exige consistencia ACID estricta e inmediata entre la facturación y el decremento de existencias. PostgreSQL impone restricciones declarativas en el motor (`CHECK (stock >= 0)`, claves foráneas y transacciones ACID sin penalización distribuida), evitando inconsistencias y condiciones de carrera que en MongoDB demandarían transacciones multi-documento costosas o lógica defensiva compleja en la aplicación.  
 > 2. **Localidad de Lectura y Escalabilidad Desacoplada:** Para el servicio de consulta de comandas en cocina, seguimiento en tiempo real de delivery y archivado histórico, el modelo documental con *Embedding* de MongoDB ofrece ventajas concluyentes de rendimiento al resolver lecturas completas en un único acceso sin `JOINs`.  
-> Por tanto, la solución óptima consiste en conservar **PostgreSQL como Single Source of Truth transaccional** y replicar asincrónicamente los pedidos confirmados hacia **MongoDB como almacén de lectura desnormalizado**.
+> Por tanto, el diseño óptimo consiste en conservar **PostgreSQL como Single Source of Truth transaccional** y replicar asincrónicamente los pedidos confirmados hacia **MongoDB como almacén de lectura desnormalizado**.
 
 ---
 

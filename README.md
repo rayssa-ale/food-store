@@ -14,8 +14,9 @@ decide). El código fuente vive en la raíz y en `sql/`.
 | **TP4** — Analíticas: joins, agregación, ventana | `TP4/` | queries_tp4, MVs T1/T5, lectura crítica, equivalencias EXCEPT, competencia ×3.5, DUIA, `TP4_Food_Store.pdf` | `57c1529`, `b073fba`, `c9f64cd` |
 | **TP5** — Índices, vistas y vistas materializadas | `TP5/` | índices (×1.6 / ×30 / ×2), vistas + seguridad, MV ×41.000, `informe_mediciones.md`, `duia.md`, `TP5_Food_Store.pdf` | `a3f3844`, `ed24029`, `b73529e`, `44a74b1`, `edd0abc` |
 | **TP6** — Unidad 4: FNBC y desnormalización controlada | `TP6/` | `tp_fnbc_control_lote.sql`, `tp_desnormalizacion_top_categorias.sql`, `TP6_Food_Store.pdf` | `b2bde0d`, `aa59180` |
-| **U5** — Seguridad: roles, auditoría y anonimización | `sql/`, `docs/` | roles, triggers, logs, informes y verificación de equivalencia | pendiente |
-| **U6** — Mantenimiento, respaldo y recuperación | `U6/` | SPEC, backup/health/maintenance/restore, `informe_u6.pdf`, evidencias | pendiente |
+| **U5** — Seguridad: roles, auditoría y anonimización | `sql/`, `docs/`, `docs/kiro_roles_spec/` | roles y permisos, auditoría nativa, simulacro de incidente, anonimización, logs e informes | `19690c9`, `3aa729d`, `aeb97dc`, `aab0868`, `bc97b80` |
+| **U6** — Mantenimiento, respaldo y recuperación | `TP6/`, `TP6/sql/` | SPEC, backup/restore, health check, maintenance, `informe_u6.pdf`, anexo de evidencias | `4e02112` |
+| **U7** — NoSQL: MongoDB vs PostgreSQL | `Trabajo Practico - Unidad 7/` | migración, consultas cruzadas, informes HTML/PDF | `f517c98` |
 | **U8** — Food Store en la feria: SQLite + semáforo | `movil/`, `docs/` | schema/pruebas/semaforo SQLite, snapshot CSV, db, `informe.pdf`, specs Kiro, bitácora y DUIA | `4b97f27`, `c6837c7`, `46a6634` |
 
 Historial completo: `git log --oneline` (cada commit describe su pieza y su evidencia).
@@ -77,28 +78,27 @@ Entregables: `movil/schema_sqlite.sql`, `movil/pruebas_sqlite.sql`,
 
 ## U6 (Unidad 6): Mantenimiento, respaldo y recuperación
 
-Laboratorio sobre `foodstore` (clon de `food_store_u5`, 161 MB) y restauración
-descartable en `foodstore_restore_test`. La base principal no se elimina.
+Laboratorio sobre `foodStore`, con restauración descartable en
+`foodstore_restore_test`. La base principal nunca se elimina ni se reemplaza.
 
 ```powershell
-$env:PGPASSWORD = '<contraseña>'
 # ejecutar desde la raíz del repo
-.\U6\backup_foodstore.ps1
-& 'C:\Program Files\PostgreSQL\18\bin\psql.exe' -d foodstore -f U6\health_check.sql
-& 'C:\Program Files\PostgreSQL\18\bin\psql.exe' -d foodstore -f U6\maintenance.sql
-.\U6\restore_test.ps1
+.\TP6\backup_foodstore.ps1
+& 'C:\Program Files\PostgreSQL\18\bin\psql.exe' -d foodStore -f TP6\sql\health_check.sql
+& 'C:\Program Files\PostgreSQL\18\bin\psql.exe' -d foodStore -f TP6\sql\maintenance.sql
+.\TP6\restore_test.ps1
 ```
 
 | Evidencia | Resultado |
 |---|---|
-| Respaldo `pg_dump -Fc` | 11,9 MB, 185 entradas, 6,26 s |
-| Health check | 161 MB, 1 conexión, cache hit 82,5 %, sin consultas activas |
-| Mantenimiento | `ANALYZE` 1,5 s; `categoria` pasó de `reltuples=-1` a 3; sin `VACUUM FULL` |
-| Restauración | RTO **8,89 s**, RPO observado **85,22 s**, conteos OK, inválidos 0 |
-| Hallazgo | El restore lógico no transfiere estadísticas (`categoria` sin `pg_statistic`) ni ACLs con `--no-owner --no-privileges`; agregar `ANALYZE` + roles/grants post-restore |
+| Respaldo `pg_dump -Fc` | `foodStore_2026-10-30_172759.dump`, 32,62 KB |
+| Health check | conexiones, bloqueos y ratio commits/rollbacks dentro del umbral |
+| Mantenimiento | `VACUUM (VERBOSE, ANALYZE)` sin `VACUUM FULL`; `n_dead_tup = 0` |
+| Restauración | RTO **6,18 s** (meta < 300 s), RPO **6 h 00 m 26 s** (meta < 24 h) |
+| Validación | 4/5/12/11/20 filas restauradas, 0 inconsistencias lógicas |
 
-Detalle, problema real y mejora: `U6/SPEC_U6.md`, `U6/informe_u6.pdf` y
-`U6/evidencias/`.
+Detalle y evidencias: `TP6/SPEC_U6.md`, `TP6/informe_u6.pdf` y
+`TP6/anexo_evidencias_u6.pdf`.
 
 ---
 

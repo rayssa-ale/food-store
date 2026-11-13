@@ -63,7 +63,7 @@ que la caché también necesita una política de bajas, no solo de altas.
 (requisitos/design/tasks de Kiro, bitácora de IA y DUIA) y `507d798` (informe
 final, orden de reproducción e índice actualizado).
 
-La U5 del equipo (Partes A–E) ya está en `origin/main`. La versión local de U5 y
-la de U6 de esta sesión quedan fuera de este commit para revisarlas por
-separado, porque el repositorio ya tiene implementaciones de esas unidades
-subidas por el resto del equipo.
+La U5 queda con la versión del equipo (Partes A–E, rama de Julieta) y la U6 con
+la de Ivana en `TP6/`. Las variantes locales de U5 y U6 se descartaron para no
+duplicar implementaciones. El TP7 quedó consolidado en
+`Trabajo Practico - Unidad 7/`, con el informe que incluye a todo el equipo.

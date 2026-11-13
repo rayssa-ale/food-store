@@ -1,6 +1,10 @@
 # Respaldo de la base (se generan con pg_dump; NO versionar)
 respaldos/*.sql
 
+# Respaldos y logs de los laboratorios (se generan al ejecutar; NO versionar)
+backups/
+logs/
+
 # Python / temporales
 __pycache__/
 *.pyc

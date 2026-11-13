@@ -8,17 +8,21 @@ Los scripts PostgreSQL sustentan los TP de integridad, concurrencia, seguridad y
 - `schema.sql` — DDL definitivo (enums, 5 tablas, 3 índices; reglas R1–R7).
 - `seed.sql` — carga inicial (3 categorías, 6 productos, 3 clientes, 3 pedidos, 5 líneas).
 - `sql/restricciones.sql` — triggers de reglas de negocio evaluadas en TP2 Parte 1.
-- `sql/usuarios_base.sql`, `sql/roles.sql`, `sql/auditoria_test.sql`,
-  `sql/simulacro_incidente.sql`, `sql/usuario_anon.sql` — Unidad 5
-  (seguridad, auditoría, incidente y anonimización).
-- `TP6/` — Unidad 4 (entrega): `tp_fnbc_control_lote.sql` (FNBC),
-  `tp_desnormalizacion_top_categorias.sql` (cubo con disparadores),
-  `TP6_Food_Store.pdf` (informe) y `carga_dia_actual.sql`, que siembra el
-  día corriente para que el `EXPLAIN ANALYZE` del reporte no mida un
-  conjunto vacío. Los .sql también están en la raíz del repo.
-- `U6/` — Unidad 6 (entrega): `SPEC_U6.md`, `backup_foodstore.ps1`,
-  `health_check.sql`, `maintenance.sql`, `restore_test.ps1`, `informe_u6.pdf`
-  y `evidencias/`. `backups/` y `logs/` no se versionan.
+- `sql/roles.sql`, `sql/simulacro_incidente.sql`, `sql/usuario_anon.sql` —
+  Unidad 5 (seguridad, auditoría, incidente y anonimización). La
+  especificación está en `docs/kiro_roles_spec/`.
+- `TP6/` — Unidades 4 y 6.
+  - Unidad 4: `tp_fnbc_control_lote.sql` (FNBC),
+    `tp_desnormalizacion_top_categorias.sql` (cubo con disparadores),
+    `TP6_Food_Store.pdf` (informe) y `carga_dia_actual.sql`, que siembra el
+    día corriente para que el `EXPLAIN ANALYZE` del reporte no mida un
+    conjunto vacío. Los .sql también están en la raíz del repo.
+  - Unidad 6: `SPEC_U6.md`, `backup_foodstore.ps1`, `restore_test.ps1`,
+    `sql/health_check.sql`, `sql/maintenance.sql`, `sql/validation_drill.sql`,
+    `informe_u6.pdf` y `anexo_evidencias_u6.pdf`. `backups/` y `logs/` no se
+    versionan.
+- `Trabajo Practico - Unidad 7/` — Unidad 7 (NoSQL): migración a MongoDB,
+  consultas cruzadas, informe y PDF.
 - `movil/` — Unidad 8 (entrega): `schema_sqlite.sql`, `pruebas_sqlite.sql`,
   `semaforo.sql`, `v_snapshot_movil.sql`, `exportar_snapshot.sql`,
   `verificacion_servidor.sql`, `servidor_snapshot.csv`,
@@ -48,11 +52,11 @@ $psql = 'C:\Program Files\PostgreSQL\18\bin\psql.exe'
 createdb -T plantilla copia_trabajo
 pg_dump -U postgres copia_trabajo > respaldos/<fecha>.sql
 
-# U6: respaldo, health check, mantenimiento y simulacro
-& $psql -U postgres -h localhost -d foodstore -f U6/health_check.sql
-& $psql -U postgres -h localhost -d foodstore -f U6/maintenance.sql
-.\U6\backup_foodstore.ps1
-.\U6\restore_test.ps1
+# U6: respaldo, health check, mantenimiento y simulacro (Ivana, en TP6/)
+& $psql -U postgres -h localhost -d foodStore -f TP6/sql/health_check.sql
+& $psql -U postgres -h localhost -d foodStore -f TP6/sql/maintenance.sql
+.\TP6\backup_foodstore.ps1
+.\TP6\restore_test.ps1
 
 # U8: instantánea para la tablet y verificación del servidor
 # createdb -U postgres -T foodstore foodstore_u8
