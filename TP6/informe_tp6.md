@@ -341,7 +341,7 @@ Reproducir las mediciones. La Parte 2 necesita que el día corriente tenga pedid
 
 **Repositorio**: https://github.com/rayssa-ale/food-store/tree/main/TP6 (rama `main`, carpeta `TP6/`).
 
-**Ejecución verificada sobre `food_store_tp6`** (PostgreSQL 18 local). Toda afirmación técnica está acompañada del SQL o de la salida de EXPLAIN ANALYZE que la demuestra.
+**Ejecución verificada sobre `food_store_tp6`** (PostgreSQL 18 local): la Parte 2 (mediciones y planes) se mantiene tal como se ejecutó y documentó. La Parte 1 fue **corregida** en la segunda entrega (F-U4-4, §4): su lógica fue validada por simulación, pero debe **reejecutarse** para refrescar la salida verificada (`EXCEPT ALL` 0/0, cardinalidad, firma y contraejemplo). Toda afirmación técnica está acompañada del SQL o de la salida que la demuestra.
 
 ## 4. Corrección posterior incorporada en la segunda entrega (F-U4-4)
 
